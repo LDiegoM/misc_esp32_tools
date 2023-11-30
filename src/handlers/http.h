@@ -11,6 +11,8 @@
 #include <internal/platform/date_time.h>
 
 /////////// HTTP Handlers
+void downloadLogs();
+void deleteLogs();
 void restart();
 void getSettings();
 void delSettings();
@@ -60,6 +62,7 @@ class HttpHandlers {
         Settings *m_settings;
         WebServer *m_server;
         DateTime *m_dateTime;
+        Logging *log;
 
         void defineRoutes();
 
@@ -83,12 +86,14 @@ class HttpHandlers {
 
     public:
         HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings,
-                     DateTime *dateTime);
+                     DateTime *dateTime, Logging *logging);
 
         bool begin();
         void loop();
 
         // HTTP handlers
+        void handleDownloadLogs();
+        bool handleDeleteLogs();
         void handleRestart();
         void handleGetSettings();
         void handleDelSettings();

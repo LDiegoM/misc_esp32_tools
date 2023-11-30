@@ -3,6 +3,12 @@
 HttpHandlers *httpHandlers = nullptr;
 
 //////////////////// HTTP Handlers
+void downloadLogs(void) {
+    httpHandlers->handleDownloadLogs();
+}
+void deleteLogs(void) {
+    httpHandlers->handleDeleteLogs();
+}
 void restart() {
     httpHandlers->handleRestart();
 }
@@ -62,11 +68,13 @@ void getAdmin() {
 }
 
 //////////////////// Constructor
-HttpHandlers::HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings, DateTime *dateTime) {
+HttpHandlers::HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings,
+                           DateTime *dateTime, Logging *logging) {
     m_wifi = wifi;
     m_storage = storage;
     m_settings = settings;
     m_dateTime = dateTime;
+    log = logging;
 }
 
 //////////////////// Public methods implementation
@@ -88,6 +96,43 @@ void HttpHandlers::loop() {
 }
 
 /////////// HTTP Handlers
+void HttpHandlers::handleDownloadLogs() {
+    if (!m_storage->exists(LOGGING_FILE)) {
+        m_server->send(404, "text/plain", "not found");
+        return;
+    }
+
+    File file = m_storage->open(LOGGING_FILE);
+    if (!file) {
+        m_server->send(500, "text/plain", "fail to open logs file");
+        return;
+    }
+
+    String dataType = "application/octet-stream";
+
+    m_server->sendHeader("Content-Disposition", "inline; filename=logs.txt");
+
+    if (m_server->streamFile(file, dataType) != file.size())
+        Serial.println("Sent different data length than expected");
+    
+    file.close();
+}
+bool HttpHandlers::handleDeleteLogs() {
+    Serial.println("Starting logs delete");
+    if (!m_storage->exists(LOGGING_FILE)) {
+        m_server->send(404, "text/plain", "not found");
+        return false;
+    }
+
+    Serial.println("File exists");
+    bool flgOK = m_storage->remove(LOGGING_FILE);
+    if (flgOK)
+        m_server->send(204);
+    else
+        m_server->send(500, "text/plain", "could not delete file");
+    
+    return flgOK;
+}
 void HttpHandlers::handleRestart() {
     m_server->send(200, "text/plain", MSG_OK);
     ESP.restart();
@@ -307,6 +352,8 @@ void HttpHandlers::handleGetAdmin() {
 void HttpHandlers::defineRoutes() {
     m_server->on("/", HTTP_GET, getStatus);
 
+    m_server->on("/logs", HTTP_GET, downloadLogs);
+    m_server->on("/logs", HTTP_DELETE, deleteLogs);
     m_server->on("/restart", HTTP_POST, restart);
     m_server->on("/settings", HTTP_GET, getSettings);
     m_server->on("/settings", HTTP_DELETE, delSettings);
@@ -435,6 +482,7 @@ String HttpHandlers::getAdminHTML() {
     String html = m_storage->readAll("/wwwroot/admin/admin.html");
 
     html.replace("{free_storage}", m_storage->getFree());
+    html.replace("{logs_size}", log->logSize());
 
     return html;
 }

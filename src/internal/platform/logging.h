@@ -63,6 +63,7 @@ class Logging {
         void warn(String msg, LogTags *tags);
         void error(String msg, LogTags *tags);
 
+        String logSize();
         bool clear();
 };
 

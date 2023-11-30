@@ -92,6 +92,9 @@ void Logging::error(String msg, LogTags *tags) {
     writeData(getFullData(msg, LOG_LEVEL_ERROR, tags));
 }
 
+String Logging::logSize() {
+    return String(((float) m_storage->fileSize(LOGGING_FILE)) / 1024) + " kb";
+}
 bool Logging::clear() {
     return m_storage->remove(LOGGING_FILE);
 }
