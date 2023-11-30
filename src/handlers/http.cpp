@@ -50,13 +50,6 @@ void getSettingsMQTTCert() {
     httpHandlers->handleGetSettingsMQTTCert();
 }
 
-void getSettingsLogger() {
-    httpHandlers->handleGetSettingsLogger();
-}
-void updSettingsLogger() {
-    httpHandlers->handleUpdSettingsLogger();
-}
-
 void getSettingsDate() {
     httpHandlers->handleGetSettingsDate();
 }
@@ -274,35 +267,6 @@ void HttpHandlers::handleGetSettingsMQTTCert() {
     m_server->send(200, "text/plain", m_settings->getSettings().mqtt.ca_cert);
 }
 
-void HttpHandlers::handleGetSettingsLogger() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsLoggerHTML();
-    html += getFooterHTML("settings", "logger");
-    m_server->send(200, "text/html", html);
-}
-void HttpHandlers::handleUpdSettingsLogger() {
-    String body = m_server->arg("plain");
-    if (body.equals("")) {
-        m_server->send(400, "text/plain", ERR_LOGGER_IS_EMPTY);
-        return;
-    }
-
-    uint16_t writePeriod = parseLoggerBody(body);
-    if (writePeriod <= 0) {
-        m_server->send(400, "text/plain", ERR_LOGGER_IS_EMPTY);
-        return;
-    }
-
-    m_settings->setLoggerValues(writePeriod);
-
-    if (!m_settings->saveSettings()) {
-        m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
-        return;        
-    }
-
-    m_server->send(200, "text/plain", MSG_OK);
-}
-
 void HttpHandlers::handleGetSettingsDate() {
     String html = getHeaderHTML("settings");
     html += getSettingsDateHTML();
@@ -358,9 +322,6 @@ void HttpHandlers::defineRoutes() {
     m_server->on("/settings/mqtt", HTTP_GET, getSettingsMQTT);
     m_server->on("/settings/mqtt", HTTP_PUT, updSettingsMQTT);
     m_server->on("/settings/mqtt/cert", HTTP_GET, getSettingsMQTTCert);
-
-    m_server->on("/settings/logger", HTTP_GET, getSettingsLogger);
-    m_server->on("/settings/logger", HTTP_PUT, updSettingsLogger);
 
     m_server->on("/settings/date", HTTP_GET, getSettingsDate);
     m_server->on("/settings/date", HTTP_PUT, updSettingsDate);
@@ -458,14 +419,6 @@ String HttpHandlers::getSettingsMQTTHTML() {
     return html;
 }
 
-String HttpHandlers::getSettingsLoggerHTML() {
-    String html = m_storage->readAll("/wwwroot/settings/logger.html");
-
-    html.replace("{writePeriod}", String(m_settings->getSettings().logger.writePeriod));
-
-    return html;
-}
-
 String HttpHandlers::getSettingsDateHTML() {
     String html = m_storage->readAll("/wwwroot/settings/date.html");
 
@@ -552,23 +505,6 @@ request_mqtt_t HttpHandlers::parseMQTTBody(String body) {
     mqttValues.certData = cert;
 
     return mqttValues;
-}
-
-uint16_t HttpHandlers::parseLoggerBody(String body) {
-    uint16_t writePeriod = 0;
-
-    StaticJsonDocument<64> configs;
-    DeserializationError error = deserializeJson(configs, body);
-    if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
-        return writePeriod;
-    }
-    JsonObject jsonObj = configs.as<JsonObject>();
-
-    writePeriod = jsonObj["write_period"].as<uint16_t>();
-
-    return writePeriod;
 }
 
 request_dateTime_t HttpHandlers::parseDateBody(String body) {

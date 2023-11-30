@@ -3,27 +3,28 @@
 const char* SETTINGS_FILE = "/settings/tools.json";
 
 //////////////////// Constructor
-Settings::Settings(Storage *storage) {
+Settings::Settings(Storage *storage, Logging *logging) {
     m_storage = storage;
+    log = logging;
     m_settingsOK = false;
 }
 
 //////////////////// Public methods implementation
 bool Settings::begin() {
-    Serial.println("Read settings");
+    log->debug("Read settings");
 
     if (!readSettings()) {
         // Create new empty settings file
         defaultSettings();
         if (!saveSettings()) {
-            Serial.println("Settings err");
+            log->error("Settings err");
             delay(1000);
             return false;
         }
 
-        Serial.println("Must config");
+        log->warn("Must config");
     } else {
-        Serial.println("Settings OK");
+        log->debug("Settings OK");
     }
     m_settingsOK = true;
     
@@ -121,8 +122,8 @@ bool Settings::setMQTTCertificate(String certData) {
     return ok;
 }
 
-void Settings::setLoggerValues(uint16_t writePeriod) {
-    m_settings.logger.writePeriod = writePeriod;
+void Settings::setLoggingLevel(uint8_t level) {
+    m_settings.debugLevel = level;
 }
 
 void Settings::setDateValues(String server1, String server2, long gmtOffset, int daylightOffset) {
@@ -142,8 +143,7 @@ bool Settings::readSettings() {
     String settingsJson = m_storage->readAll(SETTINGS_FILE);
     DeserializationError error = deserializeJson(configs, settingsJson);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        log->error(String("deserializeJson() failed: ") + String(error.c_str()));
         return false;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -168,13 +168,12 @@ bool Settings::readSettings() {
         m_settings.wifiAPs.push_back(wifi);
     }
 
-    m_settings.logger.outputPath = jsonObj["data_logger"]["output_path"].as<String>();
-    m_settings.logger.writePeriod = jsonObj["data_logger"]["write_period_seconds"].as<uint16_t>();
-
     m_settings.dateTime.server1 = jsonObj["date_time"]["server1"].as<String>();
     m_settings.dateTime.server2 = jsonObj["date_time"]["server2"].as<String>();
     m_settings.dateTime.gmtOffset = jsonObj["date_time"]["gmt_offset"].as<long>();
     m_settings.dateTime.daylightOffset = jsonObj["date_time"]["daylight_offset"].as<int>();
+
+    m_settings.debugLevel = jsonObj["debugging"]["level"].as<uint8_t>();
 
     return true;
 }
@@ -197,15 +196,14 @@ String Settings::createJson() {
         wifiAP["password"] = m_settings.wifiAPs[i].password;
     }
 
-    JsonObject loggerObj = doc.createNestedObject("data_logger");
-    loggerObj["output_path"] = m_settings.logger.outputPath;
-    loggerObj["write_period_seconds"] = m_settings.logger.writePeriod;
-
     JsonObject dateTimeObj = doc.createNestedObject("date_time");
     dateTimeObj["server1"] = m_settings.dateTime.server1;
     dateTimeObj["server2"] = m_settings.dateTime.server2;
     dateTimeObj["gmt_offset"] = m_settings.dateTime.gmtOffset;
     dateTimeObj["daylight_offset"] = m_settings.dateTime.daylightOffset;
+
+    JsonObject debugging = doc.createNestedObject("debugging");
+    debugging["level"] = m_settings.debugLevel;
 
     String json;
     serializeJsonPretty(doc, json);
@@ -223,11 +221,10 @@ void Settings::defaultSettings() {
 
     m_settings.wifiAPs.clear();
 
-    m_settings.logger.outputPath = "/logs/tools_data.txt";
-    m_settings.logger.writePeriod = 1800;
-
     m_settings.dateTime.server1 = "pool.ntp.org";
     m_settings.dateTime.server2 = "time.nist.gov";
     m_settings.dateTime.gmtOffset = -3;
     m_settings.dateTime.daylightOffset = 0;
+
+    m_settings.debugLevel = LOG_LEVEL_INFO;
 }

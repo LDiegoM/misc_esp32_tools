@@ -30,9 +30,6 @@ void getSettingsMQTT();
 void updSettingsMQTT();
 void getSettingsMQTTCert();
 
-void getSettingsLogger();
-void updSettingsLogger();
-
 void getSettingsDate();
 void updSettingsDate();
 
@@ -56,8 +53,6 @@ class HttpHandlers {
 
         const char* ERR_MQTT_IS_EMPTY = "MQTT parameters can't be empty";
         
-        const char* ERR_LOGGER_IS_EMPTY = "Data Logger parameters can't be empty";
-
         const char* ERR_DATE_IS_EMPTY = "Date Time parameters can't be empty";
 
         WiFiConnection *m_wifi;
@@ -75,7 +70,6 @@ class HttpHandlers {
 
         String getSettingsWiFiHTML();
         String getSettingsMQTTHTML();
-        String getSettingsLoggerHTML();
         String getSettingsDateHTML();
 
         String getAdminHTML();
@@ -84,8 +78,6 @@ class HttpHandlers {
         std::vector<wifiAP_t> parseMultiWiFiBody(String body);
 
         request_mqtt_t parseMQTTBody(String body);
-
-        uint16_t parseLoggerBody(String body);
 
         request_dateTime_t parseDateBody(String body);
 
@@ -115,9 +107,6 @@ class HttpHandlers {
         void handleGetSettingsMQTT();
         void handleUpdSettingsMQTT();
         void handleGetSettingsMQTTCert();
-
-        void handleGetSettingsLogger();
-        void handleUpdSettingsLogger();
 
         void handleGetSettingsDate();
         void handleUpdSettingsDate();
