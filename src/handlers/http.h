@@ -9,6 +9,7 @@
 #include <internal/platform/wifi_connection.h>
 #include <internal/settings/settings.h>
 #include <internal/platform/date_time.h>
+#include <internal/platform/logging.h>
 
 /////////// HTTP Handlers
 void downloadLogs();
@@ -35,6 +36,9 @@ void getSettingsMQTTCert();
 void getSettingsDate();
 void updSettingsDate();
 
+void getSettingsLogging();
+void updSettingsLogging();
+
 void getAdmin();
 
 class HttpHandlers {
@@ -56,13 +60,14 @@ class HttpHandlers {
         const char* ERR_MQTT_IS_EMPTY = "MQTT parameters can't be empty";
         
         const char* ERR_DATE_IS_EMPTY = "Date Time parameters can't be empty";
+        
+        const char* ERR_LOGGING_IS_EMPTY = "Logging parameters can't be empty";
 
         WiFiConnection *m_wifi;
         Storage *m_storage;
         Settings *m_settings;
         WebServer *m_server;
         DateTime *m_dateTime;
-        Logging *log;
 
         void defineRoutes();
 
@@ -74,6 +79,7 @@ class HttpHandlers {
         String getSettingsWiFiHTML();
         String getSettingsMQTTHTML();
         String getSettingsDateHTML();
+        String getSettingsLoggingHTML();
 
         String getAdminHTML();
 
@@ -84,9 +90,10 @@ class HttpHandlers {
 
         request_dateTime_t parseDateBody(String body);
 
+        request_logging_t parseLoggingBody(String body);
+
     public:
-        HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings,
-                     DateTime *dateTime, Logging *logging);
+        HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings, DateTime *dateTime);
 
         bool begin();
         void loop();
@@ -115,6 +122,9 @@ class HttpHandlers {
 
         void handleGetSettingsDate();
         void handleUpdSettingsDate();
+
+        void handleGetSettingsLogging();
+        void handleUpdSettingsLogging();
 
         void handleGetAdmin();
 };

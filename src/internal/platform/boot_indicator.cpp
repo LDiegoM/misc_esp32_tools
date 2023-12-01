@@ -44,12 +44,22 @@ void BootIndicator::stopBlink() {
     m_tmrBlink = nullptr;
 }
 
-void BootIndicator::loop() {
-    if (m_tmrBlink == nullptr)
-        return;
+void BootIndicator::setIndicatorStatusCallback(bool(*callback)()) {
+    indicatorCallback = callback;
+}
 
-    if (m_tmrBlink->isTime()) {
-        alternateOnOff();
+void BootIndicator::loop() {
+    if (m_tmrBlink != nullptr) {
+        if (m_tmrBlink->isTime())
+            alternateOnOff();
+        
+        return;
+    }
+
+    // If timer is null, then try to execute a callback to indicate indicator status
+    if (indicatorCallback != nullptr) {
+        m_indicatorIsOn = indicatorCallback();
+        digitalWrite(m_pinBootIndicator, m_indicatorIsOn);
     }
 }
 

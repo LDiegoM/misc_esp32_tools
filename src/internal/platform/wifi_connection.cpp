@@ -23,18 +23,24 @@ bool WiFiConnection::begin() {
 
 bool WiFiConnection::connect(bool verbose) {
     if (verbose) {
-        Serial.println("WiFi Connect");
+        lg->debug("WiFi connecting", __FILE__, __LINE__);
     }
 
-    if (m_wifiMulti->run() != WL_CONNECTED) {
+    uint8_t result = m_wifiMulti->run();
+    if (result != WL_CONNECTED) {
         if (verbose)
-            Serial.println("FAIL");
+            lg->warn("WiFi connection failed", __FILE__, __LINE__, lg->newTags()->add("status", getStatusFromInt(result)));
         return false;
     }
 
     if (verbose) {
-        Serial.println("OK: " + WiFi.SSID());
-        delay(1000);
+        lg->info("WiFi connected", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("status", getStatusFromInt(result))
+                ->add("mode", isModeAP() ? "AP" : "Client")
+                ->add("ssid", getSSID())
+                ->add("ip", getIP())
+        );
     }
     return true;
 }
@@ -42,12 +48,16 @@ bool WiFiConnection::connect(bool verbose) {
 bool WiFiConnection::beginAP() {
     WiFi.mode(WIFI_AP);
     if (!WiFi.softAP(SSID_AP)) {
-        Serial.println("AP Error");
-        delay(1000);
+        lg->error("AP init Error", __FILE__, __LINE__);
         return false;
     }
-    Serial.println("AP: " + String(SSID_AP));
-    delay(1000);
+    lg->info("WiFi AP initiated", __FILE__, __LINE__,
+        lg->newTags()
+            ->add("status", getStatus())
+            ->add("mode", isModeAP() ? "AP" : "Client")
+            ->add("ssid", getSSID())
+            ->add("ip", getIP())
+    );
     return true;
 }
 
@@ -77,4 +87,30 @@ String WiFiConnection::getSSID() {
         return WiFi.SSID();
     
     return "";
+}
+
+String WiFiConnection::getStatus() {
+    return getStatusFromInt(WiFi.status());
+}
+
+//////////////////// Private methods implementation
+String WiFiConnection::getStatusFromInt(uint8_t status) {
+    switch (status) {
+        case 0:
+            return "WL_IDLE_STATUS";
+        case 1:
+            return "WL_NO_SSID_AVAIL";
+        case 2:
+            return "WL_SCAN_COMPLETED";
+        case 3:
+            return "WL_CONNECTED";
+        case 4:
+            return "WL_CONNECT_FAILED";
+        case 5:
+            return "WL_CONNECTION_LOST";
+        case 6:
+            return "WL_DISCONNECTED";
+        case 255:
+            return "WL_NO_SHIELD";
+    }
 }

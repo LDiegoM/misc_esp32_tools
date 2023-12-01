@@ -4,6 +4,8 @@
 #include <vector>
 #include <internal/platform/storage.h>
 #include <internal/platform/date_time.h>
+#include <internal/platform/logging.h>
+#include <internal/platform/timer.h>
 
 #define LOG_LEVEL_DEBUG   0
 #define LOG_LEVEL_INFO    1
@@ -11,6 +13,11 @@
 #define LOG_LEVEL_ERROR   3
 
 extern const char* LOGGING_FILE;
+
+struct logging_t {
+    uint8_t level;
+    uint16_t refreshPeriod;
+};
 
 struct logTag_t {
     String name;
@@ -34,13 +41,16 @@ class LogTags {
 class Logging {
     private:
         uint8_t m_level;
+        // refreshPeriod is defined in hours
+        uint16_t m_refreshPeriod;
         Storage *m_storage;
         DateTime *m_dt;
+        Timer *m_refreshTimer;
 
         String getDateTime();
         String getLogLevel(uint8_t level);
-        String getFullData(String msg, uint8_t level);
-        String getFullData(String msg, uint8_t level, LogTags *tags);
+        String getFullData(String msg, uint8_t level, String file, int line);
+        String getFullData(String msg, uint8_t level, String file, int line, LogTags *tags);
         void writeData(String fullData);
 
     public:
@@ -49,22 +59,28 @@ class Logging {
 
         void setLevel(uint8_t level);
         uint8_t getLevel();
+        void setRefreshPeriod(uint16_t refreshPeriod);
+        uint16_t getRefreshPeriod();
         void setDateTime(DateTime *dt);
 
         LogTags* newTags();
 
-        void debug(String msg);
-        void info(String msg);
-        void warn(String msg);
-        void error(String msg);
+        void debug(String msg, String file, int line);
+        void info(String msg, String file, int line);
+        void warn(String msg, String file, int line);
+        void error(String msg, String file, int line);
 
-        void debug(String msg, LogTags *tags);
-        void info(String msg, LogTags *tags);
-        void warn(String msg, LogTags *tags);
-        void error(String msg, LogTags *tags);
+        void debug(String msg, String file, int line, LogTags *tags);
+        void info(String msg, String file, int line, LogTags *tags);
+        void warn(String msg, String file, int line, LogTags *tags);
+        void error(String msg, String file, int line, LogTags *tags);
 
         String logSize();
         bool clear();
+
+        void loop();
 };
+
+extern Logging *lg;
 
 #endif

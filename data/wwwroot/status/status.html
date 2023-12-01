@@ -1,14 +1,13 @@
 <div class="container mt-4">
     <p>This page contains current global status.</p>
-    <p>Current date and time: {date_time}</p>
     <div class="row">
         <div class="col-md-6 mt-2">
             <div class="card">
-                <div class="card-header">Current measures</div>
+                <div class="card-header">Device status</div>
                 <div class="card-body">
-                    <p>Temp: <strong>{temp} °C</strong>.</p>
-                    <p>Pres: <strong>{pres} hPa</strong>.</p>
-                    <p>Humi: <strong>{humi} %</strong>.</p>
+                    <p>Current time: <strong>{date_time}</strong></p>
+                    <p>Free storage: <strong>{free_storage}</strong></p>
+                    <p>Free mem: <strong>{free_mem}</strong>.</p>
                 </div>
             </div>
         </div>
@@ -24,14 +23,6 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-6 mt-2">
-            <div class="card">
-                <div class="card-header">Device status</div>
-                <div class="card-body">
-                    <p>Free mem: <strong>{freeMem}</strong>.</p>
-                </div>
-            </div>
-        </div>
         <div class="col-md-6 mt-2">
             <div class="card">
                 <div class="card-header">MQTT status</div>

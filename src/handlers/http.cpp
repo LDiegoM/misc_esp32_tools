@@ -63,18 +63,23 @@ void updSettingsDate() {
     httpHandlers->handleUpdSettingsDate();
 }
 
+void getSettingsLogging() {
+    httpHandlers->handleGetSettingsLogging();
+}
+void updSettingsLogging() {
+    httpHandlers->handleUpdSettingsLogging();
+}
+
 void getAdmin() {
     httpHandlers->handleGetAdmin();
 }
 
 //////////////////// Constructor
-HttpHandlers::HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings,
-                           DateTime *dateTime, Logging *logging) {
+HttpHandlers::HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings, DateTime *dateTime) {
     m_wifi = wifi;
     m_storage = storage;
     m_settings = settings;
     m_dateTime = dateTime;
-    log = logging;
 }
 
 //////////////////// Public methods implementation
@@ -107,30 +112,37 @@ void HttpHandlers::handleDownloadLogs() {
         m_server->send(500, "text/plain", "fail to open logs file");
         return;
     }
+    size_t fileSize = file.size();
 
     String dataType = "application/octet-stream";
 
     m_server->sendHeader("Content-Disposition", "inline; filename=logs.txt");
 
-    if (m_server->streamFile(file, dataType) != file.size())
-        Serial.println("Sent different data length than expected");
+    size_t streamSize = m_server->streamFile(file, dataType);
+    if (streamSize != fileSize)
+        lg->warn("handleDownloadLogs() - sent different data length than expected", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("file_size", String(fileSize))
+                ->add("sent", String(streamSize))
+        );
     
     file.close();
 }
 bool HttpHandlers::handleDeleteLogs() {
-    Serial.println("Starting logs delete");
     if (!m_storage->exists(LOGGING_FILE)) {
-        m_server->send(404, "text/plain", "not found");
+        m_server->send(204);
         return false;
     }
 
-    Serial.println("File exists");
     bool flgOK = m_storage->remove(LOGGING_FILE);
-    if (flgOK)
+    if (flgOK) {
+        lg->info("logging file was deleted by html handler", __FILE__, __LINE__);
         m_server->send(204);
-    else
-        m_server->send(500, "text/plain", "could not delete file");
-    
+    } else {
+        lg->error("html handler could not delete logging file", __FILE__, __LINE__);
+        m_server->send(500, "text/plain", "could not delete logging file");
+    }
+
     return flgOK;
 }
 void HttpHandlers::handleRestart() {
@@ -155,6 +167,8 @@ void HttpHandlers::handleDelSettings() {
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
+
+    lg->info("all settings were removed and set to defaults", __FILE__, __LINE__);
 
     handleRestart();
 }
@@ -267,6 +281,8 @@ void HttpHandlers::handleDelSettingsWiFi() {
         return;        
     }
 
+    lg->info("wifi AP deleted", __FILE__, __LINE__, lg->newTags()->add("ap", ssid));
+
     m_server->send(200, "text/plain", MSG_OK);
 }
 
@@ -306,6 +322,8 @@ void HttpHandlers::handleUpdSettingsMQTT() {
         return;        
     }
 
+    lg->info("mqtt settings updated", __FILE__, __LINE__);
+
     m_server->send(200, "text/plain", MSG_OK);
 }
 void HttpHandlers::handleGetSettingsMQTTCert() {
@@ -341,6 +359,34 @@ void HttpHandlers::handleUpdSettingsDate() {
     m_server->send(200, "text/plain", MSG_OK);
 }
 
+void HttpHandlers::handleGetSettingsLogging() {
+    String html = getHeaderHTML("settings");
+    html += getSettingsLoggingHTML();
+    html += getFooterHTML("settings", "logging");
+    m_server->send(200, "text/html", html);
+}
+void HttpHandlers::handleUpdSettingsLogging() {
+    String body = m_server->arg("plain");
+    if (body.equals("")) {
+        m_server->send(400, "text/plain", ERR_LOGGING_IS_EMPTY);
+        return;
+    }
+
+    lg->debug("upd settings logging", __FILE__, __LINE__, lg->newTags()->add("body", body));
+    request_logging_t loggingSettings = parseLoggingBody(body);
+
+    m_settings->setLoggingValues(loggingSettings.level, loggingSettings.refreshPeriod);
+
+    if (!m_settings->saveSettings()) {
+        lg->error("fail to save logging settings", __FILE__, __LINE__);
+        m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
+        return;        
+    }
+
+    lg->debug("logging settings updated", __FILE__, __LINE__);
+    m_server->send(200, "text/plain", MSG_OK);
+}
+
 void HttpHandlers::handleGetAdmin() {
     String html = getHeaderHTML("admin");
     html += getAdminHTML();
@@ -373,118 +419,12 @@ void HttpHandlers::defineRoutes() {
     m_server->on("/settings/date", HTTP_GET, getSettingsDate);
     m_server->on("/settings/date", HTTP_PUT, updSettingsDate);
 
+    m_server->on("/settings/logging", HTTP_GET, getSettingsLogging);
+    m_server->on("/settings/logging", HTTP_PUT, updSettingsLogging);
+
     m_server->on("/admin", HTTP_GET, getAdmin);
 
     m_server->onNotFound(getNotFound);
-}
-
-String HttpHandlers::getHeaderHTML(String section) {
-    String header = m_storage->readAll("/wwwroot/header.html");
-
-    header.replace("{active_status}", (section.equals("status") ? " active" : ""));
-    header.replace("{active_settings}", (section.equals("settings") ? " active" : ""));
-    header.replace("{active_admin}", (section.equals("admin") ? " active" : ""));
-
-    if (!m_wifi->isModeAP() /*&& m_mqtt->isConnected()*/) {
-        header.replace("/bootstrap.min.css", BOOTSTRAP_CSS);
-        header.replace("/bootstrap.bundle.min.js", BOOTSTRAP_JS);
-    }
-
-    return header;
-}
-
-String HttpHandlers::getFooterHTML(String page, String section) {
-    String footer = m_storage->readAll("/wwwroot/footer.html");
-    String js = "";
-    js += "<script>";
-    js += m_storage->readAll("/wwwroot/utils.js");
-    js += "\n";
-    if (!page.equals("") && !section.equals(""))
-        js += m_storage->readAll((String("/wwwroot/") + page + "/" + section + ".js").c_str());
-    js += "</script>";
-    footer.replace("<!--{utils.js}-->", js);
-
-    return footer;
-}
-
-String HttpHandlers::getStatusHTML() {
-    String html = m_storage->readAll("/wwwroot/status/status.html");
-    if (!m_dateTime->refresh()) {
-        html.replace("{date_time}", "ERROR refreshing date_time");
-    } else {
-        html.replace("{date_time}", m_dateTime->toString());
-    }
-
-    if (m_wifi->isModeAP()) {
-        html.replace("{wifi_connected}", DISCONNECTED);
-        html.replace("{ssid}", "AP: " + m_wifi->getSSID());
-        html.replace("{ip}", "IP: " + m_wifi->getIP());
-    } else if (m_wifi->isConnected()) {
-        html.replace("{wifi_connected}", CONNECTED);
-        html.replace("{ssid}", "SSID: " + m_wifi->getSSID());
-        html.replace("{ip}", "IP: " + m_wifi->getIP());
-    } else {
-        html.replace("{wifi_connected}", DISCONNECTED);
-        html.replace("{ssid}", "");
-        html.replace("{ip}", "");
-    }
-
-    html.replace("{freeMem}", String((float) ESP.getFreeHeap() / 1024) + " kb");
-
-    /*if (m_mqtt->isConnected())
-        html.replace("{mqtt_connected}", CONNECTED);
-    else*/
-        html.replace("{mqtt_connected}", DISCONNECTED);
-
-    return html;
-}
-
-String HttpHandlers::getSettingsWiFiHTML() {
-    String htmlUpdate = "";
-    for (int i = 0; i < m_settings->getSettings().wifiAPs.size(); i++) {
-        String htmlAP = m_storage->readAll("/wwwroot/settings/wifi_update_ap.html");
-        htmlAP.replace("{ap_name}", m_settings->getSettings().wifiAPs[i].ssid);
-        htmlAP += "\n";
-        htmlUpdate += htmlAP;
-    }
-
-    String html = m_storage->readAll("/wwwroot/settings/wifi.html");
-    html.replace("<!--{wifi_update_ap.html}-->", htmlUpdate);
-    return html;
-}
-
-String HttpHandlers::getSettingsMQTTHTML() {
-    String html = m_storage->readAll("/wwwroot/settings/mqtt.html");
-
-    settings_t settings = m_settings->getSettings();
-    html.replace("{server}", settings.mqtt.server);
-    html.replace("{user}", settings.mqtt.username);
-    html.replace("{port}", String(settings.mqtt.port));
-    html.replace("{sendPeriod}", String(settings.mqtt.sendPeriod));
-    html.replace("{certificate}", "");
-
-    return html;
-}
-
-String HttpHandlers::getSettingsDateHTML() {
-    String html = m_storage->readAll("/wwwroot/settings/date.html");
-
-    settings_t settings = m_settings->getSettings();
-    html.replace("{server1}", String(settings.dateTime.server1));
-    html.replace("{server2}", String(settings.dateTime.server2));
-    html.replace("{gmtOffset}", String(settings.dateTime.gmtOffset));
-    html.replace("{daylightOffset}", String(settings.dateTime.daylightOffset));
-
-    return html;
-}
-
-String HttpHandlers::getAdminHTML() {
-    String html = m_storage->readAll("/wwwroot/admin/admin.html");
-
-    html.replace("{free_storage}", m_storage->getFree());
-    html.replace("{logs_size}", log->logSize());
-
-    return html;
 }
 
 request_wifiAP_t HttpHandlers::parseWiFiBody(String body) {
@@ -493,8 +433,11 @@ request_wifiAP_t HttpHandlers::parseWiFiBody(String body) {
     StaticJsonDocument<250> configs;
     DeserializationError error = deserializeJson(configs, body);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        lg->error("fail to parse wifi settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
         return newWiFiAP;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -511,8 +454,11 @@ std::vector<wifiAP_t> HttpHandlers::parseMultiWiFiBody(String body) {
     StaticJsonDocument<250> configs;
     DeserializationError error = deserializeJson(configs, body);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        lg->error("fail to parse multi-wifi settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
         return aps;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -534,8 +480,11 @@ request_mqtt_t HttpHandlers::parseMQTTBody(String body) {
     StaticJsonDocument<4096> configs;
     DeserializationError error = deserializeJson(configs, body);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        lg->error("fail to parse MQTT settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
         return mqttValues;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -561,8 +510,11 @@ request_dateTime_t HttpHandlers::parseDateBody(String body) {
     StaticJsonDocument<256> configs;
     DeserializationError error = deserializeJson(configs, body);
     if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.f_str());
+        lg->error("fail to parse date settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
         return dateValues;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -573,4 +525,25 @@ request_dateTime_t HttpHandlers::parseDateBody(String body) {
     dateValues.daylightOffset = jsonObj["daylight_offset"].as<int>();
 
     return dateValues;
+}
+
+request_logging_t HttpHandlers::parseLoggingBody(String body) {
+    request_logging_t loggingValues;
+
+    StaticJsonDocument<256> configs;
+    DeserializationError error = deserializeJson(configs, body);
+    if (error) {
+        lg->error("fail to parse logging settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
+        return loggingValues;
+    }
+    JsonObject jsonObj = configs.as<JsonObject>();
+
+    loggingValues.level = jsonObj["level"].as<uint8_t>();
+    loggingValues.refreshPeriod = jsonObj["refresh_period"].as<uint16_t>();
+
+    return loggingValues;
 }

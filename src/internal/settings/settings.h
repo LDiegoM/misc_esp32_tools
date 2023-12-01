@@ -12,7 +12,6 @@ extern const char* SETTINGS_FILE;
 class Settings {
     private:
         Storage *m_storage;
-        Logging *log;
         settings_t m_settings;
         bool m_settingsOK;
 
@@ -21,7 +20,7 @@ class Settings {
         void defaultSettings();
 
     public:
-        Settings(Storage *storage, Logging *logging);
+        Settings(Storage *storage);
 
         bool begin();
         bool isSettingsOK();
@@ -37,7 +36,7 @@ class Settings {
         void setMQTTValues(String server, String username, uint16_t port, uint16_t sendPeriod);
         bool setMQTTCertificate(String certData);
 
-        void setLoggingLevel(uint8_t level);
+        void setLoggingValues(uint8_t level, uint16_t refreshPeriod);
 
         void setDateValues(String server1, String server2, long gmtOffset, int daylightOffset);
 };

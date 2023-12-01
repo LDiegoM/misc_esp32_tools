@@ -17,7 +17,7 @@ async function executeCall(path, method, body) {
         ok = true;
     } else if (response.status >= 400) {
         const resp = await response.text();
-        openModal("configuration error", resp);
+        openModal("error", resp);
     }
     return ok;
 }

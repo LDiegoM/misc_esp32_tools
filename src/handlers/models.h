@@ -20,4 +20,9 @@ struct request_dateTime_t {
     int daylightOffset;
 };
 
+struct request_logging_t {
+    uint8_t level;
+    uint16_t refreshPeriod;
+};
+
 #endif

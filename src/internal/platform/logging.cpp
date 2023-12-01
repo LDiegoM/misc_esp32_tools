@@ -2,24 +2,31 @@
 
 const char* LOGGING_FILE = "/logging/logs.txt";
 
+Logging *lg = nullptr;
+
 //////////////////// Constructor
 LogTags::LogTags() {
     m_tags.clear();
 }
 
 LogTags::~LogTags() {
+    lg->debug("Destroying tags", __FILE__, __LINE__, this);
     m_tags.clear();
 }
 
 Logging::Logging(uint8_t level, Storage *storage) {
     m_level = level;
+    m_refreshPeriod = 0;
     m_storage = storage;
     m_dt = nullptr;
+    m_refreshTimer = nullptr;
 }
 Logging::Logging(uint8_t level, Storage *storage, DateTime *dt) {
     m_level = level;
+    m_refreshPeriod = 0;
     m_storage = storage;
     m_dt = dt;
+    m_refreshTimer = nullptr;
 }
 
 //////////////////// Public methods implementation
@@ -46,6 +53,23 @@ void Logging::setLevel(uint8_t level) {
 uint8_t Logging::getLevel() {
     return m_level;
 }
+void Logging::setRefreshPeriod(uint16_t refreshPeriod) {
+    m_refreshPeriod = refreshPeriod;
+
+    if (m_refreshTimer != nullptr) {
+        m_refreshTimer->stop();
+        free(m_refreshTimer);
+    }
+
+    if (m_refreshPeriod != 0) {
+        // m_refreshTimer is defined in hours
+        m_refreshTimer = new Timer(m_refreshPeriod * 60 * 60 * 1000);
+        m_refreshTimer->start();
+    }
+}
+uint16_t Logging::getRefreshPeriod() {
+    return m_refreshPeriod;
+}
 void Logging::setDateTime(DateTime *dt) {
     m_dt = dt;
 }
@@ -54,42 +78,42 @@ LogTags* Logging::newTags() {
     return new LogTags();
 }
 
-void Logging::debug(String msg) {
+void Logging::debug(String msg, String file, int line) {
     if (m_level > LOG_LEVEL_DEBUG)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_DEBUG));
+    writeData(getFullData(msg, LOG_LEVEL_DEBUG, file, line));
 }
-void Logging::info(String msg) {
+void Logging::info(String msg, String file, int line) {
     if (m_level > LOG_LEVEL_INFO)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_INFO));
+    writeData(getFullData(msg, LOG_LEVEL_INFO, file, line));
 }
-void Logging::warn(String msg) {
+void Logging::warn(String msg, String file, int line) {
     if (m_level > LOG_LEVEL_WARNING)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_WARNING));
+    writeData(getFullData(msg, LOG_LEVEL_WARNING, file, line));
 }
-void Logging::error(String msg) {
-    writeData(getFullData(msg, LOG_LEVEL_ERROR));
+void Logging::error(String msg, String file, int line) {
+    writeData(getFullData(msg, LOG_LEVEL_ERROR, file, line));
 }
 
-void Logging::debug(String msg, LogTags *tags) {
+void Logging::debug(String msg, String file, int line, LogTags *tags) {
     if (m_level > LOG_LEVEL_DEBUG)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_DEBUG, tags));
+    writeData(getFullData(msg, LOG_LEVEL_DEBUG, file, line, tags));
 }
-void Logging::info(String msg, LogTags *tags) {
+void Logging::info(String msg, String file, int line, LogTags *tags) {
     if (m_level > LOG_LEVEL_INFO)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_INFO, tags));
+    writeData(getFullData(msg, LOG_LEVEL_INFO, file, line, tags));
 }
-void Logging::warn(String msg, LogTags *tags) {
+void Logging::warn(String msg, String file, int line, LogTags *tags) {
     if (m_level > LOG_LEVEL_WARNING)
         return;
-    writeData(getFullData(msg, LOG_LEVEL_WARNING, tags));
+    writeData(getFullData(msg, LOG_LEVEL_WARNING, file, line, tags));
 }
-void Logging::error(String msg, LogTags *tags) {
-    writeData(getFullData(msg, LOG_LEVEL_ERROR, tags));
+void Logging::error(String msg, String file, int line, LogTags *tags) {
+    writeData(getFullData(msg, LOG_LEVEL_ERROR, file, line, tags));
 }
 
 String Logging::logSize() {
@@ -97,6 +121,19 @@ String Logging::logSize() {
 }
 bool Logging::clear() {
     return m_storage->remove(LOGGING_FILE);
+}
+
+void Logging::loop() {
+    if (m_refreshTimer == nullptr)
+        return;
+
+    if (!m_refreshTimer->isTime())
+        return;
+
+    if (m_storage->remove(LOGGING_FILE))
+        lg->info("logging file was deleted by periodical timer", __FILE__, __LINE__, lg->newTags()->add("period", String(m_refreshPeriod) + " hours"));
+    else
+        lg->error("periodical timer could not delete logging file", __FILE__, __LINE__);
 }
 
 //////////////////// Private methods implementation
@@ -140,11 +177,11 @@ String Logging::getLogLevel(uint8_t level) {
     return s + "]";
 }
 
-String Logging::getFullData(String msg, uint8_t level) {
-    return getDateTime() + getLogLevel(level) + "[msg:" + msg + "]";
+String Logging::getFullData(String msg, uint8_t level, String file, int line) {
+    return getDateTime() + getLogLevel(level) + "[" + file + ":" + String(line) + "][msg:" + msg + "]";
 }
-String Logging::getFullData(String msg, uint8_t level, LogTags *tags) {
-    return getFullData(msg, level) + tags->toString();
+String Logging::getFullData(String msg, uint8_t level, String file, int line, LogTags *tags) {
+    return getFullData(msg, level, file, line) + tags->toString();
 }
 
 void Logging::writeData(String fullData) {

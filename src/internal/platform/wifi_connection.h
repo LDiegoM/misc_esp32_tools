@@ -3,19 +3,20 @@
 
 #include <vector>
 #include <WiFiMulti.h>
+#include <internal/platform/logging.h>
 
 struct wifiAP_t {
     String ssid, password;
 };
 
-//struct std::vector<wifiAP_t> m_wifiAPs;
-
 class WiFiConnection {
     private:
-        const char *SSID_AP = "misc_esp32_tools";
+        const char *SSID_AP = "esp32_tools";
 
         WiFiMulti *m_wifiMulti;
         std::vector<wifiAP_t> m_wifiAPs;
+
+        String getStatusFromInt(uint8_t status);
 
     public:
         WiFiConnection(std::vector<wifiAP_t> wifiAPs);
@@ -27,6 +28,7 @@ class WiFiConnection {
         bool isModeAP();
         String getIP();
         String getSSID();
+        String getStatus();
 };
 
 #endif

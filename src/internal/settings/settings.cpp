@@ -3,32 +3,29 @@
 const char* SETTINGS_FILE = "/settings/tools.json";
 
 //////////////////// Constructor
-Settings::Settings(Storage *storage, Logging *logging) {
+Settings::Settings(Storage *storage) {
     m_storage = storage;
-    log = logging;
     m_settingsOK = false;
 }
 
 //////////////////// Public methods implementation
 bool Settings::begin() {
-    log->debug("Read settings");
+    lg->debug("Reading settings", __FILE__, __LINE__);
 
     if (!readSettings()) {
         // Create new empty settings file
         defaultSettings();
         if (!saveSettings()) {
-            log->error("Settings err");
-            delay(1000);
+            lg->error("fail to save defaulted settings error", __FILE__, __LINE__);
             return false;
         }
 
-        log->warn("Must config");
+        lg->warn("Settings were defaulted. Must config", __FILE__, __LINE__);
     } else {
-        log->debug("Settings OK");
+        lg->debug("Settings are OK", __FILE__, __LINE__);
     }
     m_settingsOK = true;
     
-    delay(1000);
     return true;
 }
 
@@ -122,8 +119,12 @@ bool Settings::setMQTTCertificate(String certData) {
     return ok;
 }
 
-void Settings::setLoggingLevel(uint8_t level) {
-    m_settings.debugLevel = level;
+void Settings::setLoggingValues(uint8_t level, uint16_t refreshPeriod) {
+    m_settings.logging.level = level;
+    m_settings.logging.refreshPeriod = refreshPeriod;
+
+    lg->setLevel(level);
+    lg->setRefreshPeriod(refreshPeriod);
 }
 
 void Settings::setDateValues(String server1, String server2, long gmtOffset, int daylightOffset) {
@@ -143,7 +144,11 @@ bool Settings::readSettings() {
     String settingsJson = m_storage->readAll(SETTINGS_FILE);
     DeserializationError error = deserializeJson(configs, settingsJson);
     if (error) {
-        log->error(String("deserializeJson() failed: ") + String(error.c_str()));
+        lg->error("fail to parse settings json", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
         return false;
     }
     JsonObject jsonObj = configs.as<JsonObject>();
@@ -173,7 +178,8 @@ bool Settings::readSettings() {
     m_settings.dateTime.gmtOffset = jsonObj["date_time"]["gmt_offset"].as<long>();
     m_settings.dateTime.daylightOffset = jsonObj["date_time"]["daylight_offset"].as<int>();
 
-    m_settings.debugLevel = jsonObj["debugging"]["level"].as<uint8_t>();
+    m_settings.logging.level = jsonObj["logging"]["level"].as<uint8_t>();
+    m_settings.logging.refreshPeriod = jsonObj["logging"]["refresh_period"].as<uint16_t>();
 
     return true;
 }
@@ -202,8 +208,9 @@ String Settings::createJson() {
     dateTimeObj["gmt_offset"] = m_settings.dateTime.gmtOffset;
     dateTimeObj["daylight_offset"] = m_settings.dateTime.daylightOffset;
 
-    JsonObject debugging = doc.createNestedObject("debugging");
-    debugging["level"] = m_settings.debugLevel;
+    JsonObject debugging = doc.createNestedObject("logging");
+    debugging["level"] = m_settings.logging.level;
+    debugging["refresh_period"] = m_settings.logging.refreshPeriod;
 
     String json;
     serializeJsonPretty(doc, json);
@@ -226,5 +233,6 @@ void Settings::defaultSettings() {
     m_settings.dateTime.gmtOffset = -3;
     m_settings.dateTime.daylightOffset = 0;
 
-    m_settings.debugLevel = LOG_LEVEL_INFO;
+    m_settings.logging.level = LOG_LEVEL_DEBUG;
+    m_settings.logging.refreshPeriod = 0;
 }

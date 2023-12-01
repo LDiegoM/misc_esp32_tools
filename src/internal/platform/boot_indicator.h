@@ -8,6 +8,7 @@ class BootIndicator {
         uint8_t m_pinBootIndicator;
         bool m_indicatorIsOn = false;
         Timer *m_tmrBlink = nullptr;
+        bool(*indicatorCallback)() = nullptr;
 
         int indicatorLevel();
 
@@ -19,6 +20,7 @@ class BootIndicator {
         void turnOff();
         void setBlinkTime(unsigned long milis);
         void stopBlink();
+        void setIndicatorStatusCallback(bool(*callback)());
         void loop();
 };
 
