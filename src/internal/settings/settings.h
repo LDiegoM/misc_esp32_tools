@@ -4,8 +4,8 @@
 #include <vector>
 #include <ArduinoJson.h>
 #include <internal/settings/models.h>
-#include <internal/platform/storage.h>
-#include <internal/platform/logging.h>
+#include <internal/core/storage.h>
+#include <internal/core/logging.h>
 
 extern const char* SETTINGS_FILE;
 

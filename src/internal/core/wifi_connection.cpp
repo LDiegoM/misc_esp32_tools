@@ -1,4 +1,4 @@
-#include <internal/platform/wifi_connection.h>
+#include <internal/core/wifi_connection.h>
 
 //////////////////// Constructor
 WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs) {

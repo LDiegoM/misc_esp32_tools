@@ -5,11 +5,11 @@
 #include <ArduinoJson.h>
 
 #include <handlers/models.h>
-#include <internal/platform/storage.h>
-#include <internal/platform/wifi_connection.h>
+#include <internal/core/storage.h>
+#include <internal/core/wifi_connection.h>
 #include <internal/settings/settings.h>
-#include <internal/platform/date_time.h>
-#include <internal/platform/logging.h>
+#include <internal/core/date_time.h>
+#include <internal/core/logging.h>
 
 /////////// HTTP Handlers
 void downloadLogs();

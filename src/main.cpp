@@ -1,9 +1,9 @@
-#include <internal/platform/boot_indicator.h>
-#include <internal/platform/date_time.h>
-#include <internal/platform/storage.h>
-#include <internal/platform/logging.h>
-#include <internal/platform/timer.h>
-#include <internal/platform/wifi_connection.h>
+#include <internal/core/boot_indicator.h>
+#include <internal/core/date_time.h>
+#include <internal/core/storage.h>
+#include <internal/core/logging.h>
+#include <internal/core/timer.h>
+#include <internal/core/wifi_connection.h>
 #include <internal/settings/settings.h>
 
 #include <handlers/http.h>
@@ -15,9 +15,6 @@ Storage *storage;
 Settings *settings;
 WiFiConnection *wifi;
 DateTime *dateTime;
-
-const unsigned long _errSettings_BlinkTime = 800;
-const unsigned long _wifiInAPMode_BlinkTime = 100;
 
 bool isWiFiConnected() {
     return wifi->isConnected();
@@ -37,12 +34,12 @@ void setup() {
     settings = new Settings(storage);
     if (!settings->begin()) {
         lg->error("Could not load settings", __FILE__, __LINE__);
-        m_bootIndicator->setBlinkTime(_errSettings_BlinkTime);
+        m_bootIndicator->startErrorBlink();
         return;
     }
     if (!settings->isSettingsOK()) {
         lg->error("Settings are not ok", __FILE__, __LINE__);
-        m_bootIndicator->setBlinkTime(_errSettings_BlinkTime);
+        m_bootIndicator->startErrorBlink();
         return;
     }
     if (settings->getSettings().wifiAPs.size() < 1)
@@ -61,13 +58,13 @@ void setup() {
     httpHandlers = new HttpHandlers(wifi, storage, settings, dateTime);
     if (!httpHandlers->begin()) {
         lg->error("Could not start http server", __FILE__, __LINE__);
-        m_bootIndicator->setBlinkTime(_errSettings_BlinkTime);
+        m_bootIndicator->startErrorBlink();
         return;
     }
 
     if (wifi->isModeAP()) {
         lg->warn("WiFi in AP mode!", __FILE__, __LINE__);
-        m_bootIndicator->setBlinkTime(_wifiInAPMode_BlinkTime);
+        m_bootIndicator->startWarningBlink();
     } else {
         lg->debug("WiFi OK", __FILE__, __LINE__);
         m_bootIndicator->setIndicatorStatusCallback(isWiFiConnected);

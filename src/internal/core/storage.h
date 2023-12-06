@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <LittleFS.h>
-#include <internal/platform/timer.h>
+#include <internal/core/timer.h>
 
 class Storage {
     private:

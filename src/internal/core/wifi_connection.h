@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <WiFiMulti.h>
-#include <internal/platform/logging.h>
+#include <internal/core/logging.h>
 
 struct wifiAP_t {
     String ssid, password;

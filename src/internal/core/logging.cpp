@@ -1,4 +1,4 @@
-#include <internal/platform/logging.h>
+#include <internal/core/logging.h>
 
 const char* LOGGING_FILE = "/logging/logs.txt";
 

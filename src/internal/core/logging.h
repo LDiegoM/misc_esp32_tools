@@ -2,10 +2,10 @@
 #define logging_h
 
 #include <vector>
-#include <internal/platform/storage.h>
-#include <internal/platform/date_time.h>
-#include <internal/platform/logging.h>
-#include <internal/platform/timer.h>
+#include <internal/core/storage.h>
+#include <internal/core/date_time.h>
+#include <internal/core/logging.h>
+#include <internal/core/timer.h>
 
 #define LOG_LEVEL_DEBUG   0
 #define LOG_LEVEL_INFO    1
