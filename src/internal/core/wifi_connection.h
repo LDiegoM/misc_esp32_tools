@@ -11,19 +11,24 @@ struct wifiAP_t {
 
 class WiFiConnection {
     private:
-        const char *SSID_AP = "esp32_tools";
+        const char *SSID_AP = "esp32_application";
 
-        WiFiMulti *m_wifiMulti;
+        WiFiMulti *m_wifiMulti = nullptr;
         std::vector<wifiAP_t> m_wifiAPs;
+        String m_apSSID = "";
 
         String getStatusFromInt(uint8_t status);
 
     public:
+        WiFiConnection();
+        WiFiConnection(String apSSID);
         WiFiConnection(std::vector<wifiAP_t> wifiAPs);
 
         bool begin();
         bool connect(bool verbose);
         bool beginAP();
+        bool beginAP(String apSSID);
+        String getDeviceAPSSID();
         bool isConnected();
         bool isModeAP();
         String getIP();

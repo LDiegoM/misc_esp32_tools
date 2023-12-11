@@ -1,7 +1,14 @@
 #include <internal/core/wifi_connection.h>
 
 //////////////////// Constructor
+WiFiConnection::WiFiConnection() {
+    m_apSSID = String(SSID_AP);
+}
+WiFiConnection::WiFiConnection(String apSSID) {
+    m_apSSID = apSSID;
+}
 WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs) {
+    m_apSSID = String(SSID_AP);
     m_wifiAPs = wifiAPs;
 
     m_wifiMulti = new WiFiMulti();
@@ -9,6 +16,9 @@ WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs) {
 
 //////////////////// Public methods implementation
 bool WiFiConnection::begin() {
+    if (m_wifiMulti == nullptr)
+        return beginAP();
+
     for (int i = 0; i < m_wifiAPs.size(); i++) {
         m_wifiMulti->addAP(m_wifiAPs[i].ssid.c_str(),
                            m_wifiAPs[i].password.c_str());
@@ -46,8 +56,12 @@ bool WiFiConnection::connect(bool verbose) {
 }
 
 bool WiFiConnection::beginAP() {
+    return beginAP(m_apSSID);
+}
+
+bool WiFiConnection::beginAP(String apSSID) {
     WiFi.mode(WIFI_AP);
-    if (!WiFi.softAP(SSID_AP)) {
+    if (!WiFi.softAP(apSSID.c_str())) {
         lg->error("AP init Error", __FILE__, __LINE__);
         return false;
     }
@@ -59,6 +73,10 @@ bool WiFiConnection::beginAP() {
             ->add("ip", getIP())
     );
     return true;
+}
+
+String WiFiConnection::getDeviceAPSSID() {
+    return m_apSSID;
 }
 
 bool WiFiConnection::isConnected() {
