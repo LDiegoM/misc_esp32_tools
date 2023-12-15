@@ -40,6 +40,10 @@ Application::~Application() {
 }
 
 //////////////////// Public methods implementation
+String Application::name() {
+    return m_app.name;
+}
+
 void Application::setDeviceID(String deviceID) {
     m_app.deviceID = deviceID;
 }
@@ -70,6 +74,12 @@ void Application::beginWiFi(std::vector<wifiAP_t> wifiAPs) {
     if (m_wifi != nullptr)
         free(m_wifi);
     m_wifi = new WiFiConnection(wifiAPs);
+    m_wifi->begin();
+}
+void Application::beginWiFi(std::vector<wifiAP_t> wifiAPs, String apSSID) {
+    if (m_wifi != nullptr)
+        free(m_wifi);
+    m_wifi = new WiFiConnection(wifiAPs, apSSID);
     m_wifi->begin();
 }
 void Application::beginWiFi(String apSSID) {

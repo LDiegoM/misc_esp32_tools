@@ -1,45 +1,38 @@
-#include <internal/core/boot_indicator.h>
-#include <internal/core/date_time.h>
-#include <internal/core/storage.h>
-#include <internal/core/logging.h>
-#include <internal/core/timer.h>
-#include <internal/core/wifi_connection.h>
-#include <internal/settings/settings.h>
+#include <internal/core/application.h>
 
 #include <handlers/http.h>
 
 #define PIN_BOOT_INDICATOR 2
 
-BootIndicator *m_bootIndicator;
-Storage *storage;
+Application *app = nullptr;
 Settings *settings;
-WiFiConnection *wifi;
-DateTime *dateTime;
 
 bool isWiFiConnected() {
-    return wifi->isConnected();
+    if (app == nullptr)
+        return false;
+    if (app->wifi() == nullptr)
+        return false;
+    return app->wifi()->isConnected();
 }
 
 void setup() {
-    m_bootIndicator = new BootIndicator(PIN_BOOT_INDICATOR, false);
-
-    storage = new Storage();
-    while (!storage->begin()) {
-        Serial.print(".");
+    app = new Application("esp32_toos", PIN_BOOT_INDICATOR, LOG_LEVEL_DEBUG);
+    if (!app->beginStorage()) {
+        app->bootIndicator()->startErrorBlink();
+        return;
     }
 
-    lg = new Logging(LOG_LEVEL_DEBUG, storage);
     lg->info("device is starting", __FILE__, __LINE__);
 
-    settings = new Settings(storage);
+    settings = new Settings(app->storage());
     if (!settings->begin()) {
         lg->error("Could not load settings", __FILE__, __LINE__);
-        m_bootIndicator->startErrorBlink();
+        app->bootIndicator()->startErrorBlink();
         return;
     }
     if (!settings->isSettingsOK()) {
         lg->error("Settings are not ok", __FILE__, __LINE__);
-        m_bootIndicator->startErrorBlink();
+        app->bootIndicator()->startErrorBlink();
         return;
     }
     if (settings->getSettings().wifiAPs.size() < 1)
@@ -48,36 +41,31 @@ void setup() {
     lg->setLevel(config.logging.level);
     lg->setRefreshPeriod(config.logging.refreshPeriod);
 
-    wifi = new WiFiConnection(config.wifiAPs);
-    wifi->begin();
+    app->beginWiFi(config.wifiAPs, app->name());
+    app->beginDateTime(config.dateTime);
 
-    dateTime = new DateTime(config.dateTime);
-    dateTime->begin();
-    lg->setDateTime(dateTime);
-
-    httpHandlers = new HttpHandlers(wifi, storage, settings, dateTime);
+    httpHandlers = new HttpHandlers(app->wifi(), app->storage(), settings, app->dateTime());
     if (!httpHandlers->begin()) {
         lg->error("Could not start http server", __FILE__, __LINE__);
-        m_bootIndicator->startErrorBlink();
+        app->bootIndicator()->startErrorBlink();
         return;
     }
 
-    if (wifi->isModeAP()) {
+    if (app->wifi()->isModeAP()) {
         lg->warn("WiFi in AP mode!", __FILE__, __LINE__);
-        m_bootIndicator->startWarningBlink();
+        app->bootIndicator()->startWarningBlink();
     } else {
         lg->debug("WiFi OK", __FILE__, __LINE__);
-        m_bootIndicator->setIndicatorStatusCallback(isWiFiConnected);
+        app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
 }
 
 void loop() {
-    if (m_bootIndicator != nullptr)
-        m_bootIndicator->loop();
+    if (app != nullptr)
+        app->loop();
 
     if (!settings->isSettingsOK())
         return;
 
     httpHandlers->loop();
-    lg->loop();
 }

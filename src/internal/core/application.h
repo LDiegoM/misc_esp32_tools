@@ -34,6 +34,8 @@ class Application {
         Application(String name, uint16_t pinBootIndicator, uint8_t logLevel);
         ~Application();
 
+        String name();
+
         void setDeviceID(String deviceID);
         void setGeoLocation(geoLocation_t geoLocation);
 
@@ -43,6 +45,7 @@ class Application {
         BootIndicator* bootIndicator();
 
         void beginWiFi(std::vector<wifiAP_t> wifiAPs);
+        void beginWiFi(std::vector<wifiAP_t> wifiAPs, String apSSID);
         void beginWiFi(String apSSID);
         WiFiConnection* wifi();
 

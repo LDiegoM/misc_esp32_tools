@@ -23,6 +23,7 @@ class WiFiConnection {
         WiFiConnection();
         WiFiConnection(String apSSID);
         WiFiConnection(std::vector<wifiAP_t> wifiAPs);
+        WiFiConnection(std::vector<wifiAP_t> wifiAPs, String apSSID);
 
         bool begin();
         bool connect(bool verbose);

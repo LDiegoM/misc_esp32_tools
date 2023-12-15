@@ -13,6 +13,12 @@ WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs) {
 
     m_wifiMulti = new WiFiMulti();
 }
+WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs, String apSSID) {
+    m_apSSID = apSSID;
+    m_wifiAPs = wifiAPs;
+
+    m_wifiMulti = new WiFiMulti();
+}
 
 //////////////////// Public methods implementation
 bool WiFiConnection::begin() {
