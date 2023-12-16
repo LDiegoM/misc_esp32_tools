@@ -10,6 +10,7 @@ class BootIndicator {
 
         uint8_t m_pinBootIndicator;
         bool m_indicatorIsOn = false;
+        bool m_invertLevels = false;
         Timer *m_tmrBlink = nullptr;
         bool(*indicatorCallback)() = nullptr;
 
@@ -17,7 +18,7 @@ class BootIndicator {
         void startBlink(unsigned long millis);
 
     public:
-        BootIndicator(uint8_t pinBootIndicator, bool indicatorStartsOn = false);
+        BootIndicator(uint8_t pinBootIndicator, bool indicatorStartsOn = false, bool invertLevels = false);
 
         void alternateOnOff();
         void turnOn();

@@ -1,7 +1,14 @@
 #ifndef handlers_http_h
 #define handlers_http_h
 
+#ifdef ESP8266
+#include <ESP8266WebServer.h>
+#elif defined(ESP32)
 #include <WebServer.h>
+#else
+#error "Unsupported platform"
+#endif
+
 #include <ArduinoJson.h>
 
 #include <handlers/models.h>
@@ -69,7 +76,11 @@ class HttpHandlers {
 
         Application *m_app;
         Settings *m_settings;
+#ifdef ESP8266
+        ESP8266WebServer *m_server;
+#elif defined(ESP32)
         WebServer *m_server;
+#endif
 
         void defineRoutes();
 

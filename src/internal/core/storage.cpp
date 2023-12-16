@@ -8,23 +8,17 @@ bool Storage::begin() {
     Timer *timeOut = new Timer(10 * 1000);
     timeOut->start();
 
-    Serial.println("Mounting FS");
-
     // Initialize SD card
     while(!LittleFS.begin()) {
         if (timeOut->isTime()) {
-            Serial.println("Storage err");
             timeOut->stop();
             free(timeOut);
-            delay(1000);
             return false;
         }
     }
 
-    Serial.println("FS mount OK");
     timeOut->stop();
     free(timeOut);
-    delay(1000);
     return true;
 }
 
@@ -36,12 +30,14 @@ String Storage::readAll(const char *path) {
     file = LittleFS.open(path, FILE_READ);
 #endif
     if (!file) {
-        Serial.println("Failed to open file for read");
+        Serial.println("Failed to open file for read: " + String(path));
         return "";
     }
     delay(100);
 
-    return file.readString();
+    String content = file.readString();
+    file.close();
+    return content;
 }
 
 // Write to the SD card
@@ -53,7 +49,7 @@ bool Storage::writeFile(const char *path, const char *message) {
     file = LittleFS.open(path, FILE_WRITE, true);
 #endif
     if (!file) {
-        Serial.println("Failed to open file for write");
+        Serial.println("Failed to open file for write: " + String(path));
         return false;
     }
     delay(100);
@@ -75,7 +71,7 @@ bool Storage::appendFile(const char *path, const char *message) {
     file = LittleFS.open(path, FILE_APPEND, true);
 #endif
     if (!file) {
-        Serial.println("Failed to open file for append");
+        Serial.println("Failed to open file for append: " + String(path));
         return false;
     }
     delay(100);
@@ -109,7 +105,7 @@ size_t Storage::fileSize(const char *path) {
     file = LittleFS.open(path, FILE_READ);
 #endif
     if (!file) {
-        Serial.println("Failed to open file to get size");
+        Serial.println("Failed to open file to get size: " + String(path));
         return size;
     }
     delay(100);
@@ -125,10 +121,18 @@ bool Storage::exists(const char *path) {
 }
 
 File Storage::open(const char *path) {
+#ifdef ESP8266
+    return LittleFS.open(path, "r");
+#else
     return LittleFS.open(path);
+#endif
 }
 File Storage::open(const char *path, const char *mode, const bool create) {
+#ifdef ESP8266
+    return LittleFS.open(path, mode);
+#else
     return LittleFS.open(path, mode, create);
+#endif
 }
 
 bool Storage::mkdir(const char*path) {

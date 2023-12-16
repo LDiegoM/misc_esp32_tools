@@ -92,7 +92,11 @@ bool HttpHandlers::begin() {
     if (!m_settings->isSettingsOK())
         return false;
 
+#ifdef ESP8266
+    m_server = new ESP8266WebServer(HTTP_PORT);
+#elif defined(ESP32)
     m_server = new WebServer(HTTP_PORT);
+#endif
 
     defineRoutes();
 
@@ -202,17 +206,17 @@ void HttpHandlers::handleGetNotFound() {
 }
 
 void HttpHandlers::handleGetStatus() {
-    String html = getHeaderHTML("status");
-    html += getStatusHTML();
-    html += getFooterHTML("status", "");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("status"));
+    m_server->sendContent(getStatusHTML());
+    m_server->sendContent(getFooterHTML("status", ""));
 }
 
 void HttpHandlers::handleGetSettingsDevice() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsDeviceHTML();
-    html += getFooterHTML("settings", "device");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsDeviceHTML());
+    m_server->sendContent(getFooterHTML("settings", "device"));
 }
 void HttpHandlers::handleUpdSettingsDevice() {
     String body = m_server->arg("plain");
@@ -247,10 +251,10 @@ void HttpHandlers::handleUpdSettingsDevice() {
 }
 
 void HttpHandlers::handleGetSettingsWiFi() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsWiFiHTML();
-    html += getFooterHTML("settings", "wifi");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsWiFiHTML());
+    m_server->sendContent(getFooterHTML("settings", "wifi"));
 }
 void HttpHandlers::handleAddSettingsWiFi() {
     String body = m_server->arg("plain");
@@ -291,7 +295,7 @@ void HttpHandlers::handleUpdSettingsWiFi() {
         return;
     }
 
-    for (int i = 0; i < aps.size(); i++) {
+    for (size_t i = 0; i < aps.size(); i++) {
         if (!m_settings->updWifiAP(aps[i].ssid.c_str(), aps[i].password.c_str())) {
             m_server->send(404, "text/plain", ERR_WIFI_AP_NOT_FOUND);
             return;
@@ -329,10 +333,10 @@ void HttpHandlers::handleDelSettingsWiFi() {
 }
 
 void HttpHandlers::handleGetSettingsMQTT() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsMQTTHTML();
-    html += getFooterHTML("settings", "mqtt");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsMQTTHTML());
+    m_server->sendContent(getFooterHTML("settings", "mqtt"));
 }
 void HttpHandlers::handleUpdSettingsMQTT() {
     String body = m_server->arg("plain");
@@ -373,10 +377,10 @@ void HttpHandlers::handleGetSettingsMQTTCert() {
 }
 
 void HttpHandlers::handleGetSettingsDate() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsDateHTML();
-    html += getFooterHTML("settings", "date");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsDateHTML());
+    m_server->sendContent(getFooterHTML("settings", "date"));
 }
 void HttpHandlers::handleUpdSettingsDate() {
     String body = m_server->arg("plain");
@@ -402,10 +406,10 @@ void HttpHandlers::handleUpdSettingsDate() {
 }
 
 void HttpHandlers::handleGetSettingsLogging() {
-    String html = getHeaderHTML("settings");
-    html += getSettingsLoggingHTML();
-    html += getFooterHTML("settings", "logging");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsLoggingHTML());
+    m_server->sendContent(getFooterHTML("settings", "logging"));
 }
 void HttpHandlers::handleUpdSettingsLogging() {
     String body = m_server->arg("plain");
@@ -430,10 +434,10 @@ void HttpHandlers::handleUpdSettingsLogging() {
 }
 
 void HttpHandlers::handleGetAdmin() {
-    String html = getHeaderHTML("admin");
-    html += getAdminHTML();
-    html += getFooterHTML("admin", "admin");
-    m_server->send(200, "text/html", html);
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("admin"));
+    m_server->sendContent(getAdminHTML());
+    m_server->sendContent(getFooterHTML("admin", "admin"));
 }
 
 //////////////////// Private methods implementation
@@ -530,7 +534,7 @@ std::vector<wifiAP_t> HttpHandlers::parseMultiWiFiBody(String body) {
     }
     JsonObject jsonObj = configs.as<JsonObject>();
 
-    for (int i = 0; i < jsonObj["aps"].size(); i++) {
+    for (size_t i = 0; i < jsonObj["aps"].size(); i++) {
         wifiAP_t ap;
         ap.ssid = jsonObj["aps"][i]["ap"].as<String>();
         ap.password = jsonObj["aps"][i]["pw"].as<String>();
@@ -563,7 +567,7 @@ request_mqtt_t HttpHandlers::parseMQTTBody(String body) {
     mqttValues.sendPeriod = jsonObj["send_period"].as<uint16_t>();
 
     String cert = "";
-    for (int i = 0; i < jsonObj["cert"].size(); i++) {
+    for (size_t i = 0; i < jsonObj["cert"].size(); i++) {
         cert += jsonObj["cert"][i].as<String>() + "\n";
     }
     mqttValues.certData = cert;

@@ -11,13 +11,21 @@ WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs) {
     m_apSSID = String(SSID_AP);
     m_wifiAPs = wifiAPs;
 
+#ifdef ESP8266
+    m_wifiMulti = new ESP8266WiFiMulti();
+#else
     m_wifiMulti = new WiFiMulti();
+#endif
 }
 WiFiConnection::WiFiConnection(std::vector<wifiAP_t> wifiAPs, String apSSID) {
     m_apSSID = apSSID;
     m_wifiAPs = wifiAPs;
 
+#ifdef ESP8266
+    m_wifiMulti = new ESP8266WiFiMulti();
+#else
     m_wifiMulti = new WiFiMulti();
+#endif
 }
 
 //////////////////// Public methods implementation
@@ -25,7 +33,7 @@ bool WiFiConnection::begin() {
     if (m_wifiMulti == nullptr)
         return beginAP();
 
-    for (int i = 0; i < m_wifiAPs.size(); i++) {
+    for (size_t i = 0; i < m_wifiAPs.size(); i++) {
         m_wifiMulti->addAP(m_wifiAPs[i].ssid.c_str(),
                            m_wifiAPs[i].password.c_str());
     }

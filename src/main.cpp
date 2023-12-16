@@ -17,7 +17,7 @@ bool isWiFiConnected() {
 
 void setup() {
     Serial.begin(9600);
-    app = new Application("esp32_tools", PIN_BOOT_INDICATOR, LOG_LEVEL_DEBUG);
+    app = new Application("esp_tools", PIN_BOOT_INDICATOR, LOG_LEVEL_DEBUG);
     if (!app->beginStorage()) {
         app->bootIndicator()->startErrorBlink();
         return;

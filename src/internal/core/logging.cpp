@@ -42,7 +42,7 @@ LogTags* LogTags::add(String name, String value) {
 
 String LogTags::toString() {
     String s = "";
-    for (int i = 0; i < m_tags.size(); i++) {
+    for (size_t i = 0; i < m_tags.size(); i++) {
         s += tagToString(m_tags[i]);
     }
     return s;

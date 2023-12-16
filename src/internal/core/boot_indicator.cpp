@@ -1,9 +1,10 @@
 #include <internal/core/boot_indicator.h>
 
 //////////////////// Constructor
-BootIndicator::BootIndicator(uint8_t pinBootIndicator, bool indicatorStartsOn) {
+BootIndicator::BootIndicator(uint8_t pinBootIndicator, bool indicatorStartsOn, bool invertLevels) {
     m_pinBootIndicator = pinBootIndicator;
     m_indicatorIsOn = indicatorStartsOn;
+    m_invertLevels = invertLevels;
 
     pinMode(m_pinBootIndicator, OUTPUT);
     digitalWrite(m_pinBootIndicator, indicatorLevel());
@@ -56,13 +57,16 @@ void BootIndicator::loop() {
     // If timer is null, then try to execute a callback to indicate indicator status
     if (indicatorCallback != nullptr) {
         m_indicatorIsOn = indicatorCallback();
-        digitalWrite(m_pinBootIndicator, m_indicatorIsOn);
+        digitalWrite(m_pinBootIndicator, indicatorLevel());
     }
 }
 
 //////////////////// Private methods implementation
 int BootIndicator::indicatorLevel() {
-    return (m_indicatorIsOn == true ? HIGH : LOW);
+    if (m_invertLevels == false)
+        return (m_indicatorIsOn == true ? HIGH : LOW);
+    else
+        return (m_indicatorIsOn == true ? LOW : HIGH);
 }
 
 void BootIndicator::startBlink(unsigned long millis) {
