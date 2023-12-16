@@ -105,7 +105,7 @@ String WiFiConnection::getIP() {
 
 String WiFiConnection::getSSID() {
     if (WiFi.getMode() == WIFI_AP)
-        return SSID_AP;
+        return m_apSSID;
     
     if (WiFi.status() == WL_CONNECTED)
         return WiFi.SSID();
@@ -137,4 +137,5 @@ String WiFiConnection::getStatusFromInt(uint8_t status) {
         case 255:
             return "WL_NO_SHIELD";
     }
+    return "INVALID_STATUS";
 }

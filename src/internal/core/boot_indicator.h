@@ -5,8 +5,8 @@
 
 class BootIndicator {
     private:
-        const unsigned long BOOT_INDICATOR_ERROR = 800;
-        const unsigned long BOOT_INDICATOR_WARNING = 100;
+        const unsigned long BOOT_INDICATOR_ERROR = 100;
+        const unsigned long BOOT_INDICATOR_WARNING = 800;
 
         uint8_t m_pinBootIndicator;
         bool m_indicatorIsOn = false;

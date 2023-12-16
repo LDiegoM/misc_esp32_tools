@@ -1,7 +1,7 @@
 function restart() {
     executeCall("/restart", "POST").then((updOk) => {
         if (updOk == true) {
-            openModal("Done", "esp32_tools is restarting");
+            openModal("Done", "esp32 device is restarting");
         }
     });
 }

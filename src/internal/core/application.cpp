@@ -2,7 +2,9 @@
 
 //////////////////// Constructor
 Application::Application(String name) {
-    Application(name, (uint8_t) LOG_LEVEL_WARNING);
+    m_app.name = name;
+    m_app.deviceID = getDeviceID();
+    lg = new Logging(LOG_LEVEL_WARNING);
 }
 Application::Application(String name, uint8_t logLevel) {
     m_app.name = name;
@@ -10,11 +12,15 @@ Application::Application(String name, uint8_t logLevel) {
     lg = new Logging(logLevel);
 }
 Application::Application(String name, uint16_t pinBootIndicator) {
-    Application(name, pinBootIndicator, LOG_LEVEL_WARNING);
+    m_app.name = name;
+    m_app.deviceID = getDeviceID();
+    lg = new Logging(LOG_LEVEL_WARNING);
+    m_bootIndicator = new BootIndicator(pinBootIndicator);
 }
 Application::Application(String name, uint16_t pinBootIndicator, uint8_t logLevel) {
     m_app.name = name;
     m_app.deviceID = getDeviceID();
+    lg = new Logging(logLevel);
     m_bootIndicator = new BootIndicator(pinBootIndicator);
 }
 Application::~Application() {
@@ -47,9 +53,19 @@ String Application::name() {
 void Application::setDeviceID(String deviceID) {
     m_app.deviceID = deviceID;
 }
+String Application::deviceID() {
+    return m_app.deviceID;
+}
 void Application::setGeoLocation(geoLocation_t geoLocation) {
     m_app.geoLocation.s = geoLocation.s;
     m_app.geoLocation.w = geoLocation.w;
+}
+void Application::setGeoLocation(float geoLocationS, float geoLocationW) {
+    m_app.geoLocation.s = geoLocationS;
+    m_app.geoLocation.w = geoLocationW;
+}
+geoLocation_t Application::geoLocation() {
+    return m_app.geoLocation;
 }
 
 bool Application::beginStorage() {
@@ -115,5 +131,5 @@ void Application::loop() {
 //////////////////// Private methods implementation
 String Application::getDeviceID() {
     // TODO: Implement a default proper device id
-    return String("implement-device-id");
+    return name() + String("_device");
 }

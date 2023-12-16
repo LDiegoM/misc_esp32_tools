@@ -24,6 +24,9 @@ void getNotFound();
 
 void getStatus();
 
+void getSettingsDevice();
+void updSettingsDevice();
+
 void getSettingsWiFi();
 void addSettingsWiFi();
 void updSettingsWiFi();
@@ -53,6 +56,7 @@ class HttpHandlers {
 
         const char* MSG_OK = "ok";
         const char* ERR_SETTINGS_SAVE_GENERIC = "Error saving settings. Please try again";
+        const char* ERR_DEVICE_IS_EMPTY = "Device parameters can't be empty";
         const char* ERR_WIFI_AP_NOT_FOUND = "AP ssid not found";
         const char* ERR_WIFI_AP_IS_EMPTY = "AP ssid can't be empty";
         const char* ERR_WIFI_AP_EXISTS = "There's already an AP with the same SSID";
@@ -63,19 +67,19 @@ class HttpHandlers {
         
         const char* ERR_LOGGING_IS_EMPTY = "Logging parameters can't be empty";
 
-        WiFiConnection *m_wifi;
-        Storage *m_storage;
+        Application *m_app;
         Settings *m_settings;
         WebServer *m_server;
-        DateTime *m_dateTime;
 
         void defineRoutes();
 
         String getHeaderHTML(String section);
         String getFooterHTML(String page, String section);
         
+        String getNotFoundHTML();
         String getStatusHTML();
 
+        String getSettingsDeviceHTML();
         String getSettingsWiFiHTML();
         String getSettingsMQTTHTML();
         String getSettingsDateHTML();
@@ -83,6 +87,8 @@ class HttpHandlers {
 
         String getAdminHTML();
 
+        request_device_t parseDeviceBody(String body);
+        
         request_wifiAP_t parseWiFiBody(String body);
         std::vector<wifiAP_t> parseMultiWiFiBody(String body);
 
@@ -93,7 +99,7 @@ class HttpHandlers {
         request_logging_t parseLoggingBody(String body);
 
     public:
-        HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings, DateTime *dateTime);
+        HttpHandlers(Application *app, Settings *settings);
 
         bool begin();
         void loop();
@@ -110,6 +116,9 @@ class HttpHandlers {
         void handleGetNotFound();
 
         void handleGetStatus();
+
+        void handleGetSettingsDevice();
+        void handleUpdSettingsDevice();
 
         void handleGetSettingsWiFi();
         void handleAddSettingsWiFi();

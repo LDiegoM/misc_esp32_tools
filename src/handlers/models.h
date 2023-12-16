@@ -3,6 +3,11 @@
 
 #include <Arduino.h>
 
+struct request_device_t {
+    String deviceID;
+    String geoLocationS, geoLocationW;
+};
+
 struct request_wifiAP_t {
     String ssid, password;
 };

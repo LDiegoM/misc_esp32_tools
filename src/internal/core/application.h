@@ -37,7 +37,10 @@ class Application {
         String name();
 
         void setDeviceID(String deviceID);
+        String deviceID();
         void setGeoLocation(geoLocation_t geoLocation);
+        void setGeoLocation(float geoLocationS, float geoLocationW);
+        geoLocation_t geoLocation();
 
         bool beginStorage();
         Storage* storage();

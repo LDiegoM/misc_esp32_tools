@@ -3,8 +3,9 @@
 const char* SETTINGS_FILE = "/settings/tools.json";
 
 //////////////////// Constructor
-Settings::Settings(Storage *storage) {
-    m_storage = storage;
+Settings::Settings(Application *app) {
+    m_app = app;
+    m_storage = app->storage();
     m_settingsOK = false;
 }
 
@@ -44,6 +45,15 @@ bool Settings::saveSettings() {
         return false;
     
     return m_storage->writeFile(SETTINGS_FILE, json.c_str());
+}
+
+void Settings::setDeviceValue(String deviceID) {
+    m_settings.app.deviceID = deviceID;
+}
+void Settings::setDeviceValue(String deviceID, float geoLocationS, float geoLocationW) {
+    m_settings.app.deviceID = deviceID;
+    m_settings.app.geoLocation.s = geoLocationS;
+    m_settings.app.geoLocation.w = geoLocationW;
 }
 
 void Settings::addWifiAP(const char* ssid, const char* password) {
@@ -153,6 +163,10 @@ bool Settings::readSettings() {
     }
     JsonObject jsonObj = configs.as<JsonObject>();
 
+    m_settings.app.deviceID = jsonObj["device"]["deviceID"].as<String>();
+    m_settings.app.geoLocation.s = jsonObj["device"]["geoLocationS"].as<float>();
+    m_settings.app.geoLocation.w = jsonObj["device"]["geoLocationW"].as<float>();
+
     m_settings.mqtt.server = jsonObj["mqtt"]["server"].as<String>();
     m_settings.mqtt.port = jsonObj["mqtt"]["port"].as<uint16_t>();
     m_settings.mqtt.username = jsonObj["mqtt"]["username"].as<String>();
@@ -187,6 +201,11 @@ bool Settings::readSettings() {
 String Settings::createJson() {
     StaticJsonDocument<1024> doc;
 
+    JsonObject deviceObj = doc.createNestedObject("device");
+    deviceObj["deviceID"] = m_settings.app.deviceID;
+    deviceObj["geoLocationS"] = m_settings.app.geoLocation.s;
+    deviceObj["geoLocationW"] = m_settings.app.geoLocation.w;
+
     JsonObject mqttObj = doc.createNestedObject("mqtt");
     mqttObj["server"] = m_settings.mqtt.server;
     mqttObj["port"] = m_settings.mqtt.port;
@@ -219,6 +238,10 @@ String Settings::createJson() {
 }
 
 void Settings::defaultSettings() {
+    m_settings.app.deviceID = m_app->deviceID();
+    m_settings.app.geoLocation.s = 0;
+    m_settings.app.geoLocation.w = 0;
+
     m_settings.mqtt.server = "";
     m_settings.mqtt.port = 0;
     m_settings.mqtt.username = "";

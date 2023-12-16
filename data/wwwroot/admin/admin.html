@@ -1,17 +1,17 @@
 <div class="container mt-4">
-	<p>This page allows to manage esp32_tools.</p>
+	<p>This page allows to manage esp32 device.</p>
     <div class="card">
         <div class="card-header">Restart</div>
         <div class="card-body">
-            <p>Use this command to restart esp32_tools and apply new settings.</p>
+            <p>Use this command to restart esp32 device and apply new settings.</p>
             <button type="button" class="btn btn-danger mt-2" onclick="restart();">Restart</button>
         </div>
     </div>
     <div class="card mt-2">
         <div class="card-header">Settings</div>
         <div class="card-body">
-            <p>Use this command to reset esp32_tools settings.</p>
-            <p>On next reboot esp32_tools will not connect to wifi. Instead it'll create an AP called <strong>esp32_tools</strong>.</p>
+            <p>Use this command to reset esp32 device settings.</p>
+            <p>On next reboot esp32 device will not connect to wifi. Instead it'll create an AP called <strong>{device_ap}</strong>.</p>
             <button type="button" class="btn btn-danger mt-2" onclick="clearSettings();">Reset settings and restart</button>
         </div>
     </div>
