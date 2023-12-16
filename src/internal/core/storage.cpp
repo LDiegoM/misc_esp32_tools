@@ -1,4 +1,4 @@
-#include <internal/platform/storage.h>
+#include <internal/core/storage.h>
 
 //////////////////// Constructor
 Storage::Storage() {}

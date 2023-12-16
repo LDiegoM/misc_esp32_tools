@@ -2,10 +2,10 @@
 #define logging_h
 
 #include <vector>
-#include <internal/platform/storage.h>
-#include <internal/platform/date_time.h>
-#include <internal/platform/logging.h>
-#include <internal/platform/timer.h>
+#include <internal/core/storage.h>
+#include <internal/core/date_time.h>
+#include <internal/core/logging.h>
+#include <internal/core/timer.h>
 
 #define LOG_LEVEL_DEBUG   0
 #define LOG_LEVEL_INFO    1
@@ -43,9 +43,9 @@ class Logging {
         uint8_t m_level;
         // refreshPeriod is defined in hours
         uint16_t m_refreshPeriod;
-        Storage *m_storage;
-        DateTime *m_dt;
-        Timer *m_refreshTimer;
+        Storage *m_storage = nullptr;
+        DateTime *m_dt = nullptr;
+        Timer *m_refreshTimer = nullptr;
 
         String getDateTime();
         String getLogLevel(uint8_t level);
@@ -54,9 +54,11 @@ class Logging {
         void writeData(String fullData);
 
     public:
-        Logging(uint8_t level, Storage *storage, DateTime *dt);
+        Logging(uint8_t level);
         Logging(uint8_t level, Storage *storage);
+        Logging(uint8_t level, Storage *storage, DateTime *dt);
 
+        void setStorage(Storage *storage);
         void setLevel(uint8_t level);
         uint8_t getLevel();
         void setRefreshPeriod(uint16_t refreshPeriod);

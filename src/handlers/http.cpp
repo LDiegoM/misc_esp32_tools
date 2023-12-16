@@ -33,6 +33,13 @@ void getStatus() {
     httpHandlers->handleGetStatus();
 }
 
+void getSettingsDevice() {
+    httpHandlers->handleGetSettingsDevice();
+}
+void updSettingsDevice() {
+    httpHandlers->handleUpdSettingsDevice();
+}
+
 void getSettingsWiFi() {
     httpHandlers->handleGetSettingsWiFi();
 }
@@ -75,11 +82,9 @@ void getAdmin() {
 }
 
 //////////////////// Constructor
-HttpHandlers::HttpHandlers(WiFiConnection *wifi, Storage *storage, Settings *settings, DateTime *dateTime) {
-    m_wifi = wifi;
-    m_storage = storage;
+HttpHandlers::HttpHandlers(Application *app, Settings *settings) {
+    m_app = app;
     m_settings = settings;
-    m_dateTime = dateTime;
 }
 
 //////////////////// Public methods implementation
@@ -102,12 +107,12 @@ void HttpHandlers::loop() {
 
 /////////// HTTP Handlers
 void HttpHandlers::handleDownloadLogs() {
-    if (!m_storage->exists(LOGGING_FILE)) {
+    if (!m_app->storage()->exists(LOGGING_FILE)) {
         m_server->send(404, "text/plain", "not found");
         return;
     }
 
-    File file = m_storage->open(LOGGING_FILE);
+    File file = m_app->storage()->open(LOGGING_FILE);
     if (!file) {
         m_server->send(500, "text/plain", "fail to open logs file");
         return;
@@ -129,12 +134,12 @@ void HttpHandlers::handleDownloadLogs() {
     file.close();
 }
 bool HttpHandlers::handleDeleteLogs() {
-    if (!m_storage->exists(LOGGING_FILE)) {
+    if (!m_app->storage()->exists(LOGGING_FILE)) {
         m_server->send(204);
         return false;
     }
 
-    bool flgOK = m_storage->remove(LOGGING_FILE);
+    bool flgOK = m_app->storage()->remove(LOGGING_FILE);
     if (flgOK) {
         lg->info("logging file was deleted by html handler", __FILE__, __LINE__);
         m_server->send(204);
@@ -150,20 +155,20 @@ void HttpHandlers::handleRestart() {
     ESP.restart();
 }
 void HttpHandlers::handleGetSettings() {
-    if (!m_storage->exists(SETTINGS_FILE)) {
+    if (!m_app->storage()->exists(SETTINGS_FILE)) {
         m_server->send(404, "text/plain", "not found");
         return;
     }
 
-    m_server->send(200, "application/json", m_storage->readAll(SETTINGS_FILE));
+    m_server->send(200, "application/json", m_app->storage()->readAll(SETTINGS_FILE));
 }
 void HttpHandlers::handleDelSettings() {
-    if (!m_storage->exists(SETTINGS_FILE)) {
+    if (!m_app->storage()->exists(SETTINGS_FILE)) {
         m_server->send(404, "text/plain", "not found");
         return;
     }
 
-    if (!m_storage->remove(SETTINGS_FILE)) {
+    if (!m_app->storage()->remove(SETTINGS_FILE)) {
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
@@ -174,7 +179,7 @@ void HttpHandlers::handleDelSettings() {
 }
 
 void HttpHandlers::handleGetBootstrapCSS() {
-    File file = m_storage->open("/wwwroot/bootstrap.min.css.gz");
+    File file = m_app->storage()->open("/wwwroot/bootstrap.min.css.gz");
     if (!file) {
         m_server->send(404);
         return;
@@ -183,7 +188,7 @@ void HttpHandlers::handleGetBootstrapCSS() {
     file.close();
 }
 void HttpHandlers::handleGetBootstrapJS() {
-    File file = LittleFS.open("/wwwroot/bootstrap.bundle.min.js.gz");
+    File file = m_app->storage()->open("/wwwroot/bootstrap.bundle.min.js.gz");
     if (!file) {
         m_server->send(404);
         return;
@@ -192,8 +197,7 @@ void HttpHandlers::handleGetBootstrapJS() {
     file.close();
 }
 void HttpHandlers::handleGetNotFound() {
-    String html = m_storage->readAll("/wwwroot/error.html");
-    html.replace("{error_description}", "Resource not found");
+    String html = getNotFoundHTML();
     m_server->send(404, "text/html", html);
 }
 
@@ -202,6 +206,44 @@ void HttpHandlers::handleGetStatus() {
     html += getStatusHTML();
     html += getFooterHTML("status", "");
     m_server->send(200, "text/html", html);
+}
+
+void HttpHandlers::handleGetSettingsDevice() {
+    String html = getHeaderHTML("settings");
+    html += getSettingsDeviceHTML();
+    html += getFooterHTML("settings", "device");
+    m_server->send(200, "text/html", html);
+}
+void HttpHandlers::handleUpdSettingsDevice() {
+    String body = m_server->arg("plain");
+    if (body.equals("")) {
+        m_server->send(400, "text/plain", ERR_DEVICE_IS_EMPTY);
+        return;
+    }
+
+    request_device_t deviceSettings = parseDeviceBody(body);
+    if (deviceSettings.deviceID.equals("")) {
+        m_server->send(400, "text/plain", ERR_DEVICE_IS_EMPTY);
+        return;
+    }
+
+    m_app->setDeviceID(deviceSettings.deviceID);
+    if (deviceSettings.geoLocationS.equals("") || deviceSettings.geoLocationW.equals("")) {
+        m_settings->setDeviceValue(deviceSettings.deviceID);
+    } else {
+        geoLocation_t appGeoLocation;
+        appGeoLocation.s = deviceSettings.geoLocationS.toFloat();
+        appGeoLocation.w = deviceSettings.geoLocationW.toFloat();
+        m_app->setGeoLocation(appGeoLocation);
+        m_settings->setDeviceValue(deviceSettings.deviceID, appGeoLocation.s, appGeoLocation.w);
+    }
+
+    if (!m_settings->saveSettings()) {
+        m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
+        return;        
+    }
+
+    m_server->send(200, "text/plain", MSG_OK);
 }
 
 void HttpHandlers::handleGetSettingsWiFi() {
@@ -407,6 +449,9 @@ void HttpHandlers::defineRoutes() {
     m_server->on("/bootstrap.min.css", HTTP_GET, getBootstrapCSS);
     m_server->on("/bootstrap.bundle.min.js", HTTP_GET, getBootstrapJS);
 
+    m_server->on("/settings/device", HTTP_GET, getSettingsDevice);
+    m_server->on("/settings/device", HTTP_PUT, updSettingsDevice);
+
     m_server->on("/settings/wifi", HTTP_GET, getSettingsWiFi);
     m_server->on("/settings/wifi", HTTP_POST, addSettingsWiFi);
     m_server->on("/settings/wifi", HTTP_PUT, updSettingsWiFi);
@@ -425,6 +470,28 @@ void HttpHandlers::defineRoutes() {
     m_server->on("/admin", HTTP_GET, getAdmin);
 
     m_server->onNotFound(getNotFound);
+}
+
+request_device_t HttpHandlers::parseDeviceBody(String body) {
+    request_device_t deviceValues;
+
+    StaticJsonDocument<256> configs;
+    DeserializationError error = deserializeJson(configs, body);
+    if (error) {
+        lg->error("fail to parse device settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
+        return deviceValues;
+    }
+    JsonObject jsonObj = configs.as<JsonObject>();
+
+    deviceValues.deviceID = jsonObj["deviceID"].as<String>();
+    deviceValues.geoLocationS = jsonObj["geoLocationS"].as<String>();
+    deviceValues.geoLocationW = jsonObj["geoLocationW"].as<String>();
+
+    return deviceValues;
 }
 
 request_wifiAP_t HttpHandlers::parseWiFiBody(String body) {

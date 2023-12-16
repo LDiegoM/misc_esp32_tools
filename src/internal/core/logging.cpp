@@ -1,4 +1,4 @@
-#include <internal/platform/logging.h>
+#include <internal/core/logging.h>
 
 const char* LOGGING_FILE = "/logging/logs.txt";
 
@@ -14,19 +14,20 @@ LogTags::~LogTags() {
     m_tags.clear();
 }
 
+Logging::Logging(uint8_t level) {
+    m_level = level;
+    m_refreshPeriod = 0;
+}
 Logging::Logging(uint8_t level, Storage *storage) {
     m_level = level;
     m_refreshPeriod = 0;
     m_storage = storage;
-    m_dt = nullptr;
-    m_refreshTimer = nullptr;
 }
 Logging::Logging(uint8_t level, Storage *storage, DateTime *dt) {
     m_level = level;
     m_refreshPeriod = 0;
     m_storage = storage;
     m_dt = dt;
-    m_refreshTimer = nullptr;
 }
 
 //////////////////// Public methods implementation
@@ -45,6 +46,10 @@ String LogTags::toString() {
         s += tagToString(m_tags[i]);
     }
     return s;
+}
+
+void Logging::setStorage(Storage *storage) {
+    m_storage = storage;
 }
 
 void Logging::setLevel(uint8_t level) {
@@ -117,14 +122,20 @@ void Logging::error(String msg, String file, int line, LogTags *tags) {
 }
 
 String Logging::logSize() {
+    if (m_storage == nullptr)
+        return String("0 kb");
+
     return String(((float) m_storage->fileSize(LOGGING_FILE)) / 1024) + " kb";
 }
 bool Logging::clear() {
+    if (m_storage == nullptr)
+        return false;
+
     return m_storage->remove(LOGGING_FILE);
 }
 
 void Logging::loop() {
-    if (m_refreshTimer == nullptr)
+    if (m_refreshTimer == nullptr || m_storage == nullptr)
         return;
 
     if (!m_refreshTimer->isTime())
@@ -186,5 +197,8 @@ String Logging::getFullData(String msg, uint8_t level, String file, int line, Lo
 
 void Logging::writeData(String fullData) {
     String data = fullData + "\n";
-    m_storage->appendFile(LOGGING_FILE, data.c_str());
+    if (m_storage != nullptr)
+        m_storage->appendFile(LOGGING_FILE, data.c_str());
+    else
+        Serial.print(data);
 }

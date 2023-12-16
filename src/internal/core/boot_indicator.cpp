@@ -1,4 +1,4 @@
-#include <internal/platform/boot_indicator.h>
+#include <internal/core/boot_indicator.h>
 
 //////////////////// Constructor
 BootIndicator::BootIndicator(uint8_t pinBootIndicator, bool indicatorStartsOn) {
@@ -25,14 +25,11 @@ void BootIndicator::turnOff(){
     digitalWrite(m_pinBootIndicator, indicatorLevel());
 }
 
-void BootIndicator::setBlinkTime(unsigned long millis) {
-    if (m_tmrBlink != nullptr) {
-        m_tmrBlink->stop();
-        free(m_tmrBlink);
-    }
-
-    m_tmrBlink = new Timer(millis);
-    m_tmrBlink->start();
+void BootIndicator::startErrorBlink() {
+    startBlink(BOOT_INDICATOR_ERROR);
+}
+void BootIndicator::startWarningBlink() {
+    startBlink(BOOT_INDICATOR_WARNING);
 }
 
 void BootIndicator::stopBlink() {
@@ -66,4 +63,14 @@ void BootIndicator::loop() {
 //////////////////// Private methods implementation
 int BootIndicator::indicatorLevel() {
     return (m_indicatorIsOn == true ? HIGH : LOW);
+}
+
+void BootIndicator::startBlink(unsigned long millis) {
+    if (m_tmrBlink != nullptr) {
+        m_tmrBlink->stop();
+        free(m_tmrBlink);
+    }
+
+    m_tmrBlink = new Timer(millis);
+    m_tmrBlink->start();
 }

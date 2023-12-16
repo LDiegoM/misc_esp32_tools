@@ -4,13 +4,14 @@
 #include <vector>
 #include <ArduinoJson.h>
 #include <internal/settings/models.h>
-#include <internal/platform/storage.h>
-#include <internal/platform/logging.h>
+#include <internal/core/storage.h>
+#include <internal/core/logging.h>
 
 extern const char* SETTINGS_FILE;
 
 class Settings {
     private:
+        Application *m_app;
         Storage *m_storage;
         settings_t m_settings;
         bool m_settingsOK;
@@ -20,12 +21,15 @@ class Settings {
         void defaultSettings();
 
     public:
-        Settings(Storage *storage);
+        Settings(Application *app);
 
         bool begin();
         bool isSettingsOK();
         settings_t getSettings();
         bool saveSettings();
+
+        void setDeviceValue(String deviceID);
+        void setDeviceValue(String deviceID, float geoLocationS, float geoLocationW);
 
         void addWifiAP(const char* ssid, const char* password);
         bool updWifiAP(const char* ssid, const char* password);
