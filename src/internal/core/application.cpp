@@ -21,7 +21,11 @@ Application::Application(String name, uint16_t pinBootIndicator, uint8_t logLeve
     m_app.name = name;
     m_app.deviceID = getDeviceID();
     lg = new Logging(logLevel);
+#ifdef ESP8266
+    m_bootIndicator = new BootIndicator(pinBootIndicator, false, true);
+#else
     m_bootIndicator = new BootIndicator(pinBootIndicator);
+#endif
 }
 Application::~Application() {
     if (m_storage != nullptr) {

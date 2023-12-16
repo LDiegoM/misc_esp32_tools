@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <time.h>
-#include <esp_sntp.h>
+//#include <esp_sntp.h>
 
 struct dateTime_t {
     String server1;

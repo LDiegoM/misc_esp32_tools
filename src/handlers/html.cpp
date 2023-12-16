@@ -86,7 +86,7 @@ String HttpHandlers::getSettingsDeviceHTML() {
 
 String HttpHandlers::getSettingsWiFiHTML() {
     String htmlUpdate = "";
-    for (int i = 0; i < m_settings->getSettings().wifiAPs.size(); i++) {
+    for (size_t i = 0; i < m_settings->getSettings().wifiAPs.size(); i++) {
         String htmlAP = m_app->storage()->readAll("/wwwroot/settings/wifi_update_ap.html");
         htmlAP.replace("{ap_name}", m_settings->getSettings().wifiAPs[i].ssid);
         htmlAP += "\n";

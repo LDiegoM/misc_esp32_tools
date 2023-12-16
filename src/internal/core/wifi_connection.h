@@ -2,7 +2,15 @@
 #define wifi_connection_h
 
 #include <vector>
+
+#ifdef ESP8266
+#include <ESP8266WiFiMulti.h>
+#elif defined(ESP32)
 #include <WiFiMulti.h>
+#else
+#error "Unsupported platform"
+#endif
+
 #include <internal/core/logging.h>
 
 struct wifiAP_t {
@@ -11,9 +19,13 @@ struct wifiAP_t {
 
 class WiFiConnection {
     private:
-        const char *SSID_AP = "esp32_application";
+        const char *SSID_AP = "esp_application";
 
-        WiFiMulti *m_wifiMulti = nullptr;
+#ifdef ESP8266
+        ESP8266WiFiMulti *m_wifiMulti;
+#elif defined(ESP32)
+        WiFiMulti *m_wifiMulti;
+#endif
         std::vector<wifiAP_t> m_wifiAPs;
         String m_apSSID = "";
 
