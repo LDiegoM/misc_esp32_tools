@@ -56,6 +56,8 @@ String Application::name() {
 
 void Application::setDeviceID(String deviceID) {
     m_app.deviceID = deviceID;
+    if (_mqtt != nullptr)
+        _mqtt->setDeviceID(deviceID);
 }
 String Application::deviceID() {
     return m_app.deviceID;
@@ -63,13 +65,21 @@ String Application::deviceID() {
 void Application::setGeoLocation(geoLocation_t geoLocation) {
     m_app.geoLocation.s = geoLocation.s;
     m_app.geoLocation.w = geoLocation.w;
+    if (_mqtt != nullptr)
+        _mqtt->setLocation(getLocation());
+
 }
 void Application::setGeoLocation(float geoLocationS, float geoLocationW) {
     m_app.geoLocation.s = geoLocationS;
     m_app.geoLocation.w = geoLocationW;
+    if (_mqtt != nullptr)
+        _mqtt->setLocation(getLocation());
 }
 geoLocation_t Application::geoLocation() {
     return m_app.geoLocation;
+}
+String Application::getLocation() {
+    return String(m_app.geoLocation.s) + ", " + String(m_app.geoLocation.w);
 }
 
 bool Application::beginStorage() {
@@ -124,12 +134,33 @@ DateTime* Application::dateTime() {
     return m_dateTime;
 }
 
+bool Application::beginMqtt(mqtt_t settings) {
+    if (m_wifi == nullptr || settings.server.equals("") || settings.username.equals(""))
+        return false;
+    if (_mqtt != nullptr)
+        free (_mqtt);
+    lg->debug("application mqtt begin", __FILE__, __LINE__,
+        lg->newTags()
+            ->add("server", settings.server + ":" + String(settings.port))
+            ->add("username", settings.username)
+    );
+
+    _mqtt = new MqttConnection(name(), deviceID(), getLocation(), wifi(), storage(), settings);
+    return _mqtt->begin();
+}
+MqttConnection* Application::mqtt() {
+    return _mqtt;
+}
+
 void Application::loop() {
     if (m_bootIndicator != nullptr)
         m_bootIndicator->loop();
 
     if (lg != nullptr)
         lg->loop();
+    
+    if (_mqtt != nullptr)
+        _mqtt->loop();
 }
 
 //////////////////// Private methods implementation

@@ -96,20 +96,20 @@ bool Settings::ssidExists(String ssid) {
 }
 
 void Settings::setMQTTValues(String server, String username, String password, uint16_t port, uint16_t sendPeriod) {
-    m_settings.mqtt.server = server;
-    m_settings.mqtt.username = username;
-    m_settings.mqtt.password = password;
-    m_settings.mqtt.port = port;
+    m_settings.mqtt.connection.server = server;
+    m_settings.mqtt.connection.username = username;
+    m_settings.mqtt.connection.password = password;
+    m_settings.mqtt.connection.port = port;
     m_settings.mqtt.sendPeriod = sendPeriod;
 }
 void Settings::setMQTTValues(String server, String username, uint16_t port, uint16_t sendPeriod) {
-    m_settings.mqtt.server = server;
-    m_settings.mqtt.username = username;
-    m_settings.mqtt.port = port;
+    m_settings.mqtt.connection.server = server;
+    m_settings.mqtt.connection.username = username;
+    m_settings.mqtt.connection.port = port;
     m_settings.mqtt.sendPeriod = sendPeriod;
 }
 bool Settings::setMQTTCertificate(String certData) {
-    if (m_settings.mqtt.caCertPath.equals(""))
+    if (m_settings.mqtt.connection.caCertPath.equals(""))
         return false;
 
     unsigned int strLen = certData.length() + 1;
@@ -117,14 +117,14 @@ bool Settings::setMQTTCertificate(String certData) {
     certData.toCharArray(charData, strLen);
     charData[strLen] = '\0';
 
-    m_storage->remove(m_settings.mqtt.caCertPath.c_str());
-    bool ok = m_storage->writeFile(m_settings.mqtt.caCertPath.c_str(), charData);
+    m_storage->remove(m_settings.mqtt.connection.caCertPath.c_str());
+    bool ok = m_storage->writeFile(m_settings.mqtt.connection.caCertPath.c_str(), charData);
     if (ok) {
-        free(m_settings.mqtt.ca_cert);
-        String cert = m_storage->readAll(m_settings.mqtt.caCertPath.c_str());
-        m_settings.mqtt.ca_cert = (char*)malloc(cert.length() + 1);
-        cert.toCharArray(m_settings.mqtt.ca_cert, cert.length());
-        m_settings.mqtt.ca_cert[cert.length()] = '\0';
+        free(m_settings.mqtt.connection.ca_cert);
+        String cert = m_storage->readAll(m_settings.mqtt.connection.caCertPath.c_str());
+        m_settings.mqtt.connection.ca_cert = (char*)malloc(cert.length() + 1);
+        cert.toCharArray(m_settings.mqtt.connection.ca_cert, cert.length());
+        m_settings.mqtt.connection.ca_cert[cert.length()] = '\0';
     }
     return ok;
 }
@@ -167,16 +167,16 @@ bool Settings::readSettings() {
     m_settings.app.geoLocation.s = jsonObj["device"]["geoLocationS"].as<float>();
     m_settings.app.geoLocation.w = jsonObj["device"]["geoLocationW"].as<float>();
 
-    m_settings.mqtt.server = jsonObj["mqtt"]["server"].as<String>();
-    m_settings.mqtt.port = jsonObj["mqtt"]["port"].as<uint16_t>();
-    m_settings.mqtt.username = jsonObj["mqtt"]["username"].as<String>();
-    m_settings.mqtt.password = jsonObj["mqtt"]["password"].as<String>();
-    m_settings.mqtt.caCertPath = jsonObj["mqtt"]["crt_path"].as<String>();
+    m_settings.mqtt.connection.server = jsonObj["mqtt"]["server"].as<String>();
+    m_settings.mqtt.connection.port = jsonObj["mqtt"]["port"].as<uint16_t>();
+    m_settings.mqtt.connection.username = jsonObj["mqtt"]["username"].as<String>();
+    m_settings.mqtt.connection.password = jsonObj["mqtt"]["password"].as<String>();
+    m_settings.mqtt.connection.caCertPath = jsonObj["mqtt"]["crt_path"].as<String>();
     m_settings.mqtt.sendPeriod = jsonObj["mqtt"]["send_period_seconds"].as<uint16_t>();
-    String cert = m_storage->readAll(m_settings.mqtt.caCertPath.c_str());
-    m_settings.mqtt.ca_cert = (char*)malloc(cert.length() + 1);
-    cert.toCharArray(m_settings.mqtt.ca_cert, cert.length());
-    m_settings.mqtt.ca_cert[cert.length()] = '\0';
+    String cert = m_storage->readAll(m_settings.mqtt.connection.caCertPath.c_str());
+    m_settings.mqtt.connection.ca_cert = (char*)malloc(cert.length() + 1);
+    cert.toCharArray(m_settings.mqtt.connection.ca_cert, cert.length());
+    m_settings.mqtt.connection.ca_cert[cert.length()] = '\0';
 
     m_settings.wifiAPs.clear();
     for (size_t i = 0; i < jsonObj["wifi"].size(); i++) {
@@ -207,11 +207,11 @@ String Settings::createJson() {
     deviceObj["geoLocationW"] = m_settings.app.geoLocation.w;
 
     JsonObject mqttObj = doc.createNestedObject("mqtt");
-    mqttObj["server"] = m_settings.mqtt.server;
-    mqttObj["port"] = m_settings.mqtt.port;
-    mqttObj["username"] = m_settings.mqtt.username;
-    mqttObj["password"] = m_settings.mqtt.password;
-    mqttObj["crt_path"] = m_settings.mqtt.caCertPath;
+    mqttObj["server"] = m_settings.mqtt.connection.server;
+    mqttObj["port"] = m_settings.mqtt.connection.port;
+    mqttObj["username"] = m_settings.mqtt.connection.username;
+    mqttObj["password"] = m_settings.mqtt.connection.password;
+    mqttObj["crt_path"] = m_settings.mqtt.connection.caCertPath;
     mqttObj["send_period_seconds"] = m_settings.mqtt.sendPeriod;
 
     JsonArray wifiArr = doc.createNestedArray("wifi");
@@ -242,11 +242,11 @@ void Settings::defaultSettings() {
     m_settings.app.geoLocation.s = 0;
     m_settings.app.geoLocation.w = 0;
 
-    m_settings.mqtt.server = "";
-    m_settings.mqtt.port = 0;
-    m_settings.mqtt.username = "";
-    m_settings.mqtt.password = "";
-    m_settings.mqtt.caCertPath = "/settings/mqtt_ca_root.crt";
+    m_settings.mqtt.connection.server = "";
+    m_settings.mqtt.connection.port = 0;
+    m_settings.mqtt.connection.username = "";
+    m_settings.mqtt.connection.password = "";
+    m_settings.mqtt.connection.caCertPath = "/settings/mqtt_ca_root.crt";
     m_settings.mqtt.sendPeriod = 3600;
 
     m_settings.wifiAPs.clear();

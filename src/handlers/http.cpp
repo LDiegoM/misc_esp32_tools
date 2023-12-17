@@ -373,7 +373,7 @@ void HttpHandlers::handleUpdSettingsMQTT() {
     m_server->send(200, "text/plain", MSG_OK);
 }
 void HttpHandlers::handleGetSettingsMQTTCert() {
-    m_server->send(200, "text/plain", m_settings->getSettings().mqtt.ca_cert);
+    m_server->send(200, "text/plain", m_settings->getSettings().mqtt.connection.ca_cert);
 }
 
 void HttpHandlers::handleGetSettingsDate() {

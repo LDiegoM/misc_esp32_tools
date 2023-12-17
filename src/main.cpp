@@ -50,6 +50,7 @@ void setup() {
 
     app->beginWiFi(config.wifiAPs, app->deviceID());
     app->beginDateTime(config.dateTime);
+    app->beginMqtt(config.mqtt.connection);
 
     httpHandlers = new HttpHandlers(app, settings);
     if (!httpHandlers->begin()) {
