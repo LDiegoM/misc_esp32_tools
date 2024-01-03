@@ -10,6 +10,7 @@
 #include <internal/core/logging.h>
 #include <internal/core/wifi_connection.h>
 #include <internal/core/date_time.h>
+#include <internal/core/mqtt_connection.h>
 
 struct application_t {
     String name;
@@ -41,6 +42,7 @@ class Application {
         void setGeoLocation(geoLocation_t geoLocation);
         void setGeoLocation(float geoLocationS, float geoLocationW);
         geoLocation_t geoLocation();
+        String getLocation();
 
         bool beginStorage();
         Storage* storage();
@@ -54,6 +56,9 @@ class Application {
 
         bool beginDateTime(dateTime_t settings);
         DateTime* dateTime();
+
+        bool beginMqtt(mqtt_t settings);
+        MqttConnection* mqtt();
 
         void loop();
 };

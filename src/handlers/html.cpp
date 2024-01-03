@@ -102,9 +102,9 @@ String HttpHandlers::getSettingsMQTTHTML() {
     String html = m_app->storage()->readAll("/wwwroot/settings/mqtt.html");
 
     settings_t settings = m_settings->getSettings();
-    html.replace("{server}", settings.mqtt.server);
-    html.replace("{user}", settings.mqtt.username);
-    html.replace("{port}", String(settings.mqtt.port));
+    html.replace("{server}", settings.mqtt.connection.server);
+    html.replace("{user}", settings.mqtt.connection.username);
+    html.replace("{port}", String(settings.mqtt.connection.port));
     html.replace("{sendPeriod}", String(settings.mqtt.sendPeriod));
     html.replace("{certificate}", "");
 
