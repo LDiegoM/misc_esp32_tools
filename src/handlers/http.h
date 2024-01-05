@@ -18,39 +18,6 @@
 #include <internal/core/date_time.h>
 #include <internal/core/logging.h>
 
-/////////// HTTP Handlers
-void downloadLogs();
-void deleteLogs();
-void restart();
-void getSettings();
-void delSettings();
-
-void getBootstrapCSS();
-void getBootstrapJS();
-void getNotFound();
-
-void getStatus();
-
-void getSettingsDevice();
-void updSettingsDevice();
-
-void getSettingsWiFi();
-void addSettingsWiFi();
-void updSettingsWiFi();
-void delSettingsWiFi();
-
-void getSettingsMQTT();
-void updSettingsMQTT();
-void getSettingsMQTTCert();
-
-void getSettingsDate();
-void updSettingsDate();
-
-void getSettingsLogging();
-void updSettingsLogging();
-
-void getAdmin();
-
 class HttpHandlers {
     private:
         const uint16_t HTTP_PORT = 80;
@@ -85,7 +52,7 @@ class HttpHandlers {
         void defineRoutes();
 
         String getHeaderHTML(String section);
-        String getFooterHTML(String page, String section);
+        String getFooterHTML();
         
         String getNotFoundHTML();
         String getStatusHTML();

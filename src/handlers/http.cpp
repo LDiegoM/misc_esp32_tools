@@ -2,85 +2,6 @@
 
 HttpHandlers *httpHandlers = nullptr;
 
-//////////////////// HTTP Handlers
-void downloadLogs(void) {
-    httpHandlers->handleDownloadLogs();
-}
-void deleteLogs(void) {
-    httpHandlers->handleDeleteLogs();
-}
-void restart() {
-    httpHandlers->handleRestart();
-}
-void getSettings() {
-    httpHandlers->handleGetSettings();
-}
-void delSettings() {
-    httpHandlers->handleDelSettings();
-}
-
-void getBootstrapCSS() {
-    httpHandlers->handleGetBootstrapCSS();
-}
-void getBootstrapJS() {
-    httpHandlers->handleGetBootstrapJS();
-}
-void getNotFound() {
-    httpHandlers->handleGetNotFound();
-}
-
-void getStatus() {
-    httpHandlers->handleGetStatus();
-}
-
-void getSettingsDevice() {
-    httpHandlers->handleGetSettingsDevice();
-}
-void updSettingsDevice() {
-    httpHandlers->handleUpdSettingsDevice();
-}
-
-void getSettingsWiFi() {
-    httpHandlers->handleGetSettingsWiFi();
-}
-void addSettingsWiFi() {
-    httpHandlers->handleAddSettingsWiFi();
-}
-void updSettingsWiFi() {
-    httpHandlers->handleUpdSettingsWiFi();
-}
-void delSettingsWiFi() {
-    httpHandlers->handleDelSettingsWiFi();
-}
-
-void getSettingsMQTT() {
-    httpHandlers->handleGetSettingsMQTT();
-}
-void updSettingsMQTT() {
-    httpHandlers->handleUpdSettingsMQTT();
-}
-void getSettingsMQTTCert() {
-    httpHandlers->handleGetSettingsMQTTCert();
-}
-
-void getSettingsDate() {
-    httpHandlers->handleGetSettingsDate();
-}
-void updSettingsDate() {
-    httpHandlers->handleUpdSettingsDate();
-}
-
-void getSettingsLogging() {
-    httpHandlers->handleGetSettingsLogging();
-}
-void updSettingsLogging() {
-    httpHandlers->handleUpdSettingsLogging();
-}
-
-void getAdmin() {
-    httpHandlers->handleGetAdmin();
-}
-
 //////////////////// Constructor
 HttpHandlers::HttpHandlers(Application *app, Settings *settings) {
     m_app = app;
@@ -145,16 +66,17 @@ bool HttpHandlers::handleDeleteLogs() {
 
     bool flgOK = m_app->storage()->remove(LOGGING_FILE);
     if (flgOK) {
-        lg->info("logging file was deleted by html handler", __FILE__, __LINE__);
+        lg->warn("logging file was removed by http request", __FILE__, __LINE__);
         m_server->send(204);
     } else {
-        lg->error("html handler could not delete logging file", __FILE__, __LINE__);
+        lg->error("http handler couldn't remove logging file", __FILE__, __LINE__);
         m_server->send(500, "text/plain", "could not delete logging file");
     }
 
     return flgOK;
 }
 void HttpHandlers::handleRestart() {
+    lg->warn("device was restarted by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
     ESP.restart();
 }
@@ -173,11 +95,12 @@ void HttpHandlers::handleDelSettings() {
     }
 
     if (!m_app->storage()->remove(SETTINGS_FILE)) {
+        lg->error("http handlers couldn't remove settings", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
-    lg->info("all settings were removed and set to defaults", __FILE__, __LINE__);
+    lg->warn("all settings were removed and set to defaults by http request", __FILE__, __LINE__);
 
     handleRestart();
 }
@@ -209,14 +132,14 @@ void HttpHandlers::handleGetStatus() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("status"));
     m_server->sendContent(getStatusHTML());
-    m_server->sendContent(getFooterHTML("status", ""));
+    m_server->sendContent(getFooterHTML());
 }
 
 void HttpHandlers::handleGetSettingsDevice() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("settings"));
     m_server->sendContent(getSettingsDeviceHTML());
-    m_server->sendContent(getFooterHTML("settings", "device"));
+    m_server->sendContent(getFooterHTML());
 }
 void HttpHandlers::handleUpdSettingsDevice() {
     String body = m_server->arg("plain");
@@ -243,10 +166,12 @@ void HttpHandlers::handleUpdSettingsDevice() {
     }
 
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to update device", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
+    lg->info("device settings were updated by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 
@@ -254,7 +179,7 @@ void HttpHandlers::handleGetSettingsWiFi() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("settings"));
     m_server->sendContent(getSettingsWiFiHTML());
-    m_server->sendContent(getFooterHTML("settings", "wifi"));
+    m_server->sendContent(getFooterHTML());
 }
 void HttpHandlers::handleAddSettingsWiFi() {
     String body = m_server->arg("plain");
@@ -276,10 +201,12 @@ void HttpHandlers::handleAddSettingsWiFi() {
 
     m_settings->addWifiAP(newWiFiAP.ssid.c_str(), newWiFiAP.password.c_str());
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to add wifi ap", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
+    lg->info("new wifi ap was added by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 void HttpHandlers::handleUpdSettingsWiFi() {
@@ -303,10 +230,12 @@ void HttpHandlers::handleUpdSettingsWiFi() {
     }
 
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to update wifi aps", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
+    lg->info("wifi aps were updated by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 void HttpHandlers::handleDelSettingsWiFi() {
@@ -323,11 +252,12 @@ void HttpHandlers::handleDelSettingsWiFi() {
 
     m_settings->delWifiAP(ssid.c_str());
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to delete wifi ap", __FILE__, __LINE__, lg->newTags()->add("ap", ssid));
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
-    lg->info("wifi AP deleted", __FILE__, __LINE__, lg->newTags()->add("ap", ssid));
+    lg->info("wifi ap was deleted by http request", __FILE__, __LINE__, lg->newTags()->add("ap", ssid));
 
     m_server->send(200, "text/plain", MSG_OK);
 }
@@ -336,7 +266,7 @@ void HttpHandlers::handleGetSettingsMQTT() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("settings"));
     m_server->sendContent(getSettingsMQTTHTML());
-    m_server->sendContent(getFooterHTML("settings", "mqtt"));
+    m_server->sendContent(getFooterHTML());
 }
 void HttpHandlers::handleUpdSettingsMQTT() {
     String body = m_server->arg("plain");
@@ -358,17 +288,19 @@ void HttpHandlers::handleUpdSettingsMQTT() {
 
     if (!mqttValues.certData.equals("")) {
         if (!m_settings->setMQTTCertificate(mqttValues.certData)) {
+            lg->error("http handler couldn't save mqtt certificate", __FILE__, __LINE__);
             m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
             return;        
         }
     }
 
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to update mqqt", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
-    lg->info("mqtt settings updated", __FILE__, __LINE__);
+    lg->info("mqtt settings were updated by htt request", __FILE__, __LINE__);
 
     m_server->send(200, "text/plain", MSG_OK);
 }
@@ -380,7 +312,7 @@ void HttpHandlers::handleGetSettingsDate() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("settings"));
     m_server->sendContent(getSettingsDateHTML());
-    m_server->sendContent(getFooterHTML("settings", "date"));
+    m_server->sendContent(getFooterHTML());
 }
 void HttpHandlers::handleUpdSettingsDate() {
     String body = m_server->arg("plain");
@@ -398,10 +330,12 @@ void HttpHandlers::handleUpdSettingsDate() {
     m_settings->setDateValues(dateSettings.server1, dateSettings.server2, dateSettings.gmtOffset, dateSettings.daylightOffset);
 
     if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to update date", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
+    lg->info("date settings were updated by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 
@@ -409,7 +343,7 @@ void HttpHandlers::handleGetSettingsLogging() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("settings"));
     m_server->sendContent(getSettingsLoggingHTML());
-    m_server->sendContent(getFooterHTML("settings", "logging"));
+    m_server->sendContent(getFooterHTML());
 }
 void HttpHandlers::handleUpdSettingsLogging() {
     String body = m_server->arg("plain");
@@ -418,18 +352,17 @@ void HttpHandlers::handleUpdSettingsLogging() {
         return;
     }
 
-    lg->debug("upd settings logging", __FILE__, __LINE__, lg->newTags()->add("body", body));
     request_logging_t loggingSettings = parseLoggingBody(body);
 
     m_settings->setLoggingValues(loggingSettings.level, loggingSettings.refreshPeriod);
 
     if (!m_settings->saveSettings()) {
-        lg->error("fail to save logging settings", __FILE__, __LINE__);
+        lg->error("http handler couldn't save settings to update logging", __FILE__, __LINE__);
         m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
         return;        
     }
 
-    lg->debug("logging settings updated", __FILE__, __LINE__);
+    lg->info("logging settings were updated by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 
@@ -437,43 +370,44 @@ void HttpHandlers::handleGetAdmin() {
     m_server->sendHeader("Content-Type", "text/html");
     m_server->sendContent(getHeaderHTML("admin"));
     m_server->sendContent(getAdminHTML());
-    m_server->sendContent(getFooterHTML("admin", "admin"));
+    m_server->sendContent(getFooterHTML());
 }
 
 //////////////////// Private methods implementation
 void HttpHandlers::defineRoutes() {
-    m_server->on("/", HTTP_GET, getStatus);
+    m_server->on("/",      HTTP_GET, [](){httpHandlers->handleGetStatus();});
+    m_server->on("/admin", HTTP_GET, [](){httpHandlers->handleGetAdmin();});
 
-    m_server->on("/logs", HTTP_GET, downloadLogs);
-    m_server->on("/logs", HTTP_DELETE, deleteLogs);
-    m_server->on("/restart", HTTP_POST, restart);
-    m_server->on("/settings", HTTP_GET, getSettings);
-    m_server->on("/settings", HTTP_DELETE, delSettings);
+    m_server->on("/logs", HTTP_GET,    [](){httpHandlers->handleDownloadLogs();});
+    m_server->on("/logs", HTTP_DELETE, [](){httpHandlers->handleDeleteLogs();});
 
-    m_server->on("/bootstrap.min.css", HTTP_GET, getBootstrapCSS);
-    m_server->on("/bootstrap.bundle.min.js", HTTP_GET, getBootstrapJS);
+    m_server->on("/restart", HTTP_POST, [](){httpHandlers->handleRestart();});
 
-    m_server->on("/settings/device", HTTP_GET, getSettingsDevice);
-    m_server->on("/settings/device", HTTP_PUT, updSettingsDevice);
+    m_server->on("/settings", HTTP_GET,    [](){httpHandlers->handleGetSettings();});
+    m_server->on("/settings", HTTP_DELETE, [](){httpHandlers->handleDelSettings();});
 
-    m_server->on("/settings/wifi", HTTP_GET, getSettingsWiFi);
-    m_server->on("/settings/wifi", HTTP_POST, addSettingsWiFi);
-    m_server->on("/settings/wifi", HTTP_PUT, updSettingsWiFi);
-    m_server->on("/settings/wifi", HTTP_DELETE, delSettingsWiFi);
+    m_server->on("/bootstrap.min.css",       HTTP_GET, [](){httpHandlers->handleGetBootstrapCSS();});
+    m_server->on("/bootstrap.bundle.min.js", HTTP_GET, [](){httpHandlers->handleGetBootstrapJS();});
 
-    m_server->on("/settings/mqtt", HTTP_GET, getSettingsMQTT);
-    m_server->on("/settings/mqtt", HTTP_PUT, updSettingsMQTT);
-    m_server->on("/settings/mqtt/cert", HTTP_GET, getSettingsMQTTCert);
+    m_server->on("/settings/device", HTTP_GET, [](){httpHandlers->handleGetSettingsDevice();});
+    m_server->on("/settings/device", HTTP_PUT, [](){httpHandlers->handleUpdSettingsDevice();});
 
-    m_server->on("/settings/date", HTTP_GET, getSettingsDate);
-    m_server->on("/settings/date", HTTP_PUT, updSettingsDate);
+    m_server->on("/settings/wifi", HTTP_GET,    [](){httpHandlers->handleGetSettingsWiFi();});
+    m_server->on("/settings/wifi", HTTP_POST,   [](){httpHandlers->handleAddSettingsWiFi();});
+    m_server->on("/settings/wifi", HTTP_PUT,    [](){httpHandlers->handleUpdSettingsWiFi();});
+    m_server->on("/settings/wifi", HTTP_DELETE, [](){httpHandlers->handleDelSettingsWiFi();});
 
-    m_server->on("/settings/logging", HTTP_GET, getSettingsLogging);
-    m_server->on("/settings/logging", HTTP_PUT, updSettingsLogging);
+    m_server->on("/settings/mqtt",      HTTP_GET, [](){httpHandlers->handleGetSettingsMQTT();});
+    m_server->on("/settings/mqtt",      HTTP_PUT, [](){httpHandlers->handleUpdSettingsMQTT();});
+    m_server->on("/settings/mqtt/cert", HTTP_GET, [](){httpHandlers->handleGetSettingsMQTTCert();});
 
-    m_server->on("/admin", HTTP_GET, getAdmin);
+    m_server->on("/settings/date", HTTP_GET, [](){httpHandlers->handleGetSettingsDate();});
+    m_server->on("/settings/date", HTTP_PUT, [](){httpHandlers->handleUpdSettingsDate();});
 
-    m_server->onNotFound(getNotFound);
+    m_server->on("/settings/logging", HTTP_GET, [](){httpHandlers->handleGetSettingsLogging();});
+    m_server->on("/settings/logging", HTTP_PUT, [](){httpHandlers->handleUpdSettingsLogging();});
+
+    m_server->onNotFound([](){httpHandlers->handleGetNotFound();});
 }
 
 request_device_t HttpHandlers::parseDeviceBody(String body) {

@@ -1,1 +1,0 @@
-async function executeCall(t,e,o){var a=false;const n=await fetch(t,{method:e,headers:{"Content-Type":"application/json"},body:o});if(n.status>=200&&n.status<=299){a=true}else if(n.status>=400){const s=await n.text();openModal("error",s)}return a}
