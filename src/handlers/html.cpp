@@ -69,8 +69,8 @@ String HttpHandlers::getSettingsDeviceHTML() {
 
     settings_t settings = m_settings->getSettings();
     html.replace("{deviceID}", m_app->deviceID());
-    html.replace("{geoLocationS}", String(m_app->geoLocation().s));
-    html.replace("{geoLocationW}", String(m_app->geoLocation().w));
+    html.replace("{geoLocationLat}", m_app->geoLocation().lat);
+    html.replace("{geoLocationLng}", m_app->geoLocation().lng);
 
     return html;
 }
@@ -131,8 +131,6 @@ String HttpHandlers::getSettingsLoggingHTML() {
 String HttpHandlers::getAdminHTML() {
     String html = m_app->storage()->readAll("/wwwroot/admin/admin.html");
 
-    if (m_app->wifi() != nullptr)
-        html.replace("{device_ap}", m_app->wifi()->getDeviceAPSSID());
     html.replace("{logs_size}", lg->logSize());
 
     return html;

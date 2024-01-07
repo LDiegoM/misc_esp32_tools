@@ -63,15 +63,15 @@ String Application::deviceID() {
     return m_app.deviceID;
 }
 void Application::setGeoLocation(geoLocation_t geoLocation) {
-    m_app.geoLocation.s = geoLocation.s;
-    m_app.geoLocation.w = geoLocation.w;
+    m_app.geoLocation.lat = geoLocation.lat;
+    m_app.geoLocation.lng = geoLocation.lng;
     if (_mqtt != nullptr)
         _mqtt->setLocation(getLocation());
 
 }
-void Application::setGeoLocation(float geoLocationS, float geoLocationW) {
-    m_app.geoLocation.s = geoLocationS;
-    m_app.geoLocation.w = geoLocationW;
+void Application::setGeoLocation(String geoLocationLat, String geoLocationLng) {
+    m_app.geoLocation.lat = geoLocationLat;
+    m_app.geoLocation.lng = geoLocationLng;
     if (_mqtt != nullptr)
         _mqtt->setLocation(getLocation());
 }
@@ -79,7 +79,7 @@ geoLocation_t Application::geoLocation() {
     return m_app.geoLocation;
 }
 String Application::getLocation() {
-    return String(m_app.geoLocation.s) + ", " + String(m_app.geoLocation.w);
+    return String(m_app.geoLocation.lat) + "," + String(m_app.geoLocation.lng);
 }
 
 bool Application::beginStorage() {

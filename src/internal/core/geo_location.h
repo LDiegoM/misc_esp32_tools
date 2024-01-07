@@ -4,8 +4,8 @@
 #include <Arduino.h>
 
 struct geoLocation_t {
-    float s;
-    float w;
+    String lat;
+    String lng;
 };
 
 #endif

@@ -155,15 +155,11 @@ void HttpHandlers::handleUpdSettingsDevice() {
     }
 
     m_app->setDeviceID(deviceSettings.deviceID);
-    if (deviceSettings.geoLocationS.equals("") || deviceSettings.geoLocationW.equals("")) {
-        m_settings->setDeviceValue(deviceSettings.deviceID);
-    } else {
-        geoLocation_t appGeoLocation;
-        appGeoLocation.s = deviceSettings.geoLocationS.toFloat();
-        appGeoLocation.w = deviceSettings.geoLocationW.toFloat();
-        m_app->setGeoLocation(appGeoLocation);
-        m_settings->setDeviceValue(deviceSettings.deviceID, appGeoLocation.s, appGeoLocation.w);
-    }
+    geoLocation_t appGeoLocation;
+    appGeoLocation.lat = deviceSettings.geoLocationLat;
+    appGeoLocation.lng = deviceSettings.geoLocationLng;
+    m_app->setGeoLocation(appGeoLocation);
+    m_settings->setDeviceValue(deviceSettings.deviceID, appGeoLocation.lat, appGeoLocation.lng);
 
     if (!m_settings->saveSettings()) {
         lg->error("http handler couldn't save settings to update device", __FILE__, __LINE__);
@@ -425,9 +421,9 @@ request_device_t HttpHandlers::parseDeviceBody(String body) {
     }
     JsonObject jsonObj = configs.as<JsonObject>();
 
-    deviceValues.deviceID = jsonObj["deviceID"].as<String>();
-    deviceValues.geoLocationS = jsonObj["geoLocationS"].as<String>();
-    deviceValues.geoLocationW = jsonObj["geoLocationW"].as<String>();
+    deviceValues.deviceID = jsonObj["device_id"].as<String>();
+    deviceValues.geoLocationLat = jsonObj["geo_location_lat"].as<String>();
+    deviceValues.geoLocationLng = jsonObj["geo_location_lng"].as<String>();
 
     return deviceValues;
 }
