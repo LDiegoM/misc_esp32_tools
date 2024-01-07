@@ -29,7 +29,7 @@ class Settings {
         bool saveSettings();
 
         void setDeviceValue(String deviceID);
-        void setDeviceValue(String deviceID, float geoLocationS, float geoLocationW);
+        void setDeviceValue(String deviceID, String geoLocationLat, String geoLocationLng);
 
         void addWifiAP(const char* ssid, const char* password);
         bool updWifiAP(const char* ssid, const char* password);

@@ -50,10 +50,10 @@ bool Settings::saveSettings() {
 void Settings::setDeviceValue(String deviceID) {
     m_settings.app.deviceID = deviceID;
 }
-void Settings::setDeviceValue(String deviceID, float geoLocationS, float geoLocationW) {
+void Settings::setDeviceValue(String deviceID, String geoLocationLat, String geoLocationLng) {
     m_settings.app.deviceID = deviceID;
-    m_settings.app.geoLocation.s = geoLocationS;
-    m_settings.app.geoLocation.w = geoLocationW;
+    m_settings.app.geoLocation.lat = geoLocationLat;
+    m_settings.app.geoLocation.lng = geoLocationLng;
 }
 
 void Settings::addWifiAP(const char* ssid, const char* password) {
@@ -163,9 +163,9 @@ bool Settings::readSettings() {
     }
     JsonObject jsonObj = configs.as<JsonObject>();
 
-    m_settings.app.deviceID = jsonObj["device"]["deviceID"].as<String>();
-    m_settings.app.geoLocation.s = jsonObj["device"]["geoLocationS"].as<float>();
-    m_settings.app.geoLocation.w = jsonObj["device"]["geoLocationW"].as<float>();
+    m_settings.app.deviceID = jsonObj["device"]["device_id"].as<String>();
+    m_settings.app.geoLocation.lat = jsonObj["device"]["geo_location_lat"].as<String>();
+    m_settings.app.geoLocation.lng = jsonObj["device"]["geo_location_lng"].as<String>();
 
     m_settings.mqtt.connection.server = jsonObj["mqtt"]["server"].as<String>();
     m_settings.mqtt.connection.port = jsonObj["mqtt"]["port"].as<uint16_t>();
@@ -202,9 +202,9 @@ String Settings::createJson() {
     StaticJsonDocument<1024> doc;
 
     JsonObject deviceObj = doc.createNestedObject("device");
-    deviceObj["deviceID"] = m_settings.app.deviceID;
-    deviceObj["geoLocationS"] = m_settings.app.geoLocation.s;
-    deviceObj["geoLocationW"] = m_settings.app.geoLocation.w;
+    deviceObj["device_id"] = m_settings.app.deviceID;
+    deviceObj["geo_location_lat"] = m_settings.app.geoLocation.lat;
+    deviceObj["geo_location_lng"] = m_settings.app.geoLocation.lng;
 
     JsonObject mqttObj = doc.createNestedObject("mqtt");
     mqttObj["server"] = m_settings.mqtt.connection.server;
@@ -239,8 +239,8 @@ String Settings::createJson() {
 
 void Settings::defaultSettings() {
     m_settings.app.deviceID = m_app->deviceID();
-    m_settings.app.geoLocation.s = 0;
-    m_settings.app.geoLocation.w = 0;
+    m_settings.app.geoLocation.lat = "";
+    m_settings.app.geoLocation.lng = "";
 
     m_settings.mqtt.connection.server = "";
     m_settings.mqtt.connection.port = 0;

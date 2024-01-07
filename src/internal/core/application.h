@@ -40,7 +40,7 @@ class Application {
         void setDeviceID(String deviceID);
         String deviceID();
         void setGeoLocation(geoLocation_t geoLocation);
-        void setGeoLocation(float geoLocationS, float geoLocationW);
+        void setGeoLocation(String geoLocationLat, String geoLocationLng);
         geoLocation_t geoLocation();
         String getLocation();
 

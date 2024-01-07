@@ -8,12 +8,12 @@
     </div>
     <div class="row">
         <div class="col">
-            <label for="geoLocationS" class="form-label">Geo Location S:</label>
-            <input type="number" class="form-control" id="geoLocationS" placeholder="Geo Location S" name="geoLocationS" value="{geoLocationS}">
+            <label for="geoLocationLat" class="form-label">Geo Location Latitude:</label>
+            <input type="text" class="form-control" id="geoLocationLat" placeholder="Geo Location Latitude" name="geoLocationLat" value="{geoLocationLat}">
         </div>
         <div class="col">
-            <label for="geoLocationW" class="form-label">Geo Location W:</label>
-            <input type="number" class="form-control" id="geoLocationW" placeholder="Geo Location W" name="geoLocationW" value="{geoLocationW}">
+            <label for="geoLocationLng" class="form-label">Geo Location Longitude:</label>
+            <input type="text" class="form-control" id="geoLocationLng" placeholder="Geo Location Longitude" name="geoLocationLng" value="{geoLocationLng}">
         </div>
     </div>
     <div class="row">
@@ -35,12 +35,12 @@ function saveDevice() {
 
 function getUpdateBody() {
     const deviceID = document.getElementById("deviceID").value;
-    const geoLocationS = document.getElementById("geoLocationS").value;
-    const geoLocationW = document.getElementById("geoLocationW").value;
+    const geoLocationLat = document.getElementById("geoLocationLat").value;
+    const geoLocationLng = document.getElementById("geoLocationLng").value;
 
-    var body = '{"deviceID":"' + deviceID + '"';
-    if (geoLocationS != "" && geoLocationW != "") {
-        body += ',"geoLocationS":' + geoLocationS + ',"geoLocationW":' + geoLocationW;
+    var body = '{"device_id":"' + deviceID + '"';
+    if (geoLocationLat != "" && geoLocationLng != "") {
+        body += ',"geo_location_lat":"' + geoLocationLat + '","geo_location_lng":"' + geoLocationLng + '"';
     }
     body += '}';
     return body;

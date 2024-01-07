@@ -5,7 +5,7 @@
 
 struct request_device_t {
     String deviceID;
-    String geoLocationS, geoLocationW;
+    String geoLocationLat, geoLocationLng;
 };
 
 struct request_wifiAP_t {
