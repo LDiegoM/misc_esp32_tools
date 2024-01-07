@@ -8,7 +8,7 @@ String HttpHandlers::getHeaderHTML(String section) {
     header.replace("{active_settings}", (section.equals("settings") ? " active" : ""));
     header.replace("{active_admin}", (section.equals("admin") ? " active" : ""));
 
-    if (!m_app->wifi()->isModeAP() && m_app->wifi()->isConnected() /*&& m_mqtt->isConnected()*/) {
+    if (m_app->wifi() != nullptr && !m_app->wifi()->isModeAP() && m_app->wifi()->isConnected()) {
         header.replace("/bootstrap.min.css", BOOTSTRAP_CSS);
         header.replace("/bootstrap.bundle.min.js", BOOTSTRAP_JS);
     }
@@ -16,19 +16,10 @@ String HttpHandlers::getHeaderHTML(String section) {
     return header;
 }
 
-String HttpHandlers::getFooterHTML(String page, String section) {
+String HttpHandlers::getFooterHTML() {
     String footer = m_app->storage()->readAll("/wwwroot/footer.html");
 
     footer.replace("{app_name}", m_app->name());
-
-    String js = "";
-    js += "<script>";
-    js += m_app->storage()->readAll("/wwwroot/utils.js");
-    js += "\n";
-    if (!page.equals("") && !section.equals(""))
-        js += m_app->storage()->readAll((String("/wwwroot/") + page + "/" + section + ".js").c_str());
-    js += "</script>";
-    footer.replace("<!--{utils.js}-->", js);
 
     return footer;
 }
@@ -48,11 +39,11 @@ String HttpHandlers::getStatusHTML() {
         html.replace("{date_time}", m_app->dateTime()->toString());
     }
 
-    if (m_app->wifi()->isModeAP()) {
+    if (m_app->wifi() != nullptr && m_app->wifi()->isModeAP()) {
         html.replace("{wifi_connected}", DISCONNECTED);
         html.replace("{ssid}", "AP: " + m_app->wifi()->getSSID());
         html.replace("{ip}", "IP: " + m_app->wifi()->getIP());
-    } else if (m_app->wifi()->isConnected()) {
+    } else if (m_app->wifi() != nullptr && m_app->wifi()->isConnected()) {
         html.replace("{wifi_connected}", CONNECTED);
         html.replace("{ssid}", "SSID: " + m_app->wifi()->getSSID());
         html.replace("{ip}", "IP: " + m_app->wifi()->getIP());
@@ -65,9 +56,9 @@ String HttpHandlers::getStatusHTML() {
     html.replace("{free_storage}", m_app->storage()->getFree());
     html.replace("{free_mem}", String((float) ESP.getFreeHeap() / 1024) + " kb");
 
-    /*if (m_mqtt->isConnected())
+    if (m_app->mqtt() != nullptr && m_app->mqtt()->isConnected())
         html.replace("{mqtt_connected}", CONNECTED);
-    else*/
+    else
         html.replace("{mqtt_connected}", DISCONNECTED);
 
     return html;
@@ -140,7 +131,8 @@ String HttpHandlers::getSettingsLoggingHTML() {
 String HttpHandlers::getAdminHTML() {
     String html = m_app->storage()->readAll("/wwwroot/admin/admin.html");
 
-    html.replace("{device_ap}", m_app->wifi()->getDeviceAPSSID());
+    if (m_app->wifi() != nullptr)
+        html.replace("{device_ap}", m_app->wifi()->getDeviceAPSSID());
     html.replace("{logs_size}", lg->logSize());
 
     return html;

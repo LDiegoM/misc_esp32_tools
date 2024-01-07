@@ -1,1 +1,0 @@
-function saveLogging(){const e=getUpdateBody();executeCall("/settings/logging","PUT",e).then(e=>{if(e==true){document.location.reload(true)}})}function getUpdateBody(){const e=document.getElementById("level").value;console.log("level: "+e);const t=document.getElementById("refresh_period").value;return'{"level":'+e+',"refresh_period":'+t+"}"}

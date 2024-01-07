@@ -40,8 +40,6 @@ void setup() {
         app->bootIndicator()->startErrorBlink();
         return;
     }
-    if (settings->getSettings().wifiAPs.size() < 1)
-        settings->addWifiAP("Fibertel WiFi349 2.4GHz", "");
     settings_t config = settings->getSettings();
     lg->setLevel(config.logging.level);
     lg->setRefreshPeriod(config.logging.refreshPeriod);
