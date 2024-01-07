@@ -157,6 +157,13 @@ void MqttConnection::setCallback(MQTT_CALLBACK_SIGNATURE) {
     m_mqttClient->setCallback(callback);
 }
 
+bool MqttConnection::publish(const char* topic, const char* payload){
+    return publish(topic, payload, false);
+}
+bool MqttConnection::publish(const char* topic, const char* payload, boolean retained){
+    return m_mqttClient->publish(topic, payload, retained);
+}
+
 //////////////////// Private methods implementation
 String MqttConnection::processJsonMessage(String message) {
     cmdMessage_t cmd;

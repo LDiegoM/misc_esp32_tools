@@ -68,6 +68,8 @@ class MqttConnection {
         void loop();
         void processReceivedMessage(char* topic, uint8_t* payload, unsigned int length);
         void setCallback(MQTT_CALLBACK_SIGNATURE);
+        bool publish(const char* topic, const char* payload);
+        bool publish(const char* topic, const char* payload, boolean retained);
 };
 
 extern MqttConnection *_mqtt;
