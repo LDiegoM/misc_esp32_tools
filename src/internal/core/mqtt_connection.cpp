@@ -157,6 +157,10 @@ void MqttConnection::setCallback(MQTT_CALLBACK_SIGNATURE) {
     m_mqttClient->setCallback(callback);
 }
 
+bool MqttConnection::subscribe(const char* topic) {
+    return m_mqttClient->subscribe(topic);
+}
+
 bool MqttConnection::publish(const char* topic, const char* payload){
     return publish(topic, payload, false);
 }

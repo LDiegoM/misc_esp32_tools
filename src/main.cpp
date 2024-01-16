@@ -1,11 +1,12 @@
 #include <internal/core/application.h>
-
+#include <internal/audio/doorbell.h>
 #include <handlers/http.h>
 
 #define PIN_BOOT_INDICATOR 2
 
 Application *app = nullptr;
 Settings *settings = nullptr;
+Doorbell *doorbell = nullptr;
 
 bool isWiFiConnected() {
     if (app == nullptr)
@@ -67,6 +68,10 @@ void setup() {
         lg->debug("WiFi OK", __FILE__, __LINE__);
         app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
+
+    doorbell = new Doorbell();
+    mqttHandlers = new MqttHandlers(doorbell);
+    mqttHandlers->begin();
 }
 
 void loop() {
@@ -76,5 +81,12 @@ void loop() {
     if (settings == nullptr || !settings->isSettingsOK())
         return;
 
-    httpHandlers->loop();
+    if (httpHandlers != nullptr)
+        httpHandlers->loop();
+    
+    if (doorbell != nullptr)
+        doorbell->loop();
+    
+    if (mqttHandlers != nullptr)
+        mqttHandlers->loop();
 }
