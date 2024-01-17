@@ -2,7 +2,7 @@
 #define handlers_mqtt_h
 
 #include <internal/core/mqtt_connection.h>
-#include <internal/audio/doorbell.h>
+#include <internal/garage_door/garage_door.h>
 
 struct handlers_mqtt_t {
     mqtt_t connection;
@@ -11,14 +11,12 @@ struct handlers_mqtt_t {
 
 class MqttHandlers {
     private:
-        const char* MQTT_TOPIC_DOOR_BELL = "topic-door-bell";
+        const char* MQTT_TOPIC_GARAGE_DOOR = "topic-garage-door";
 
-        Doorbell *m_doorbell;
-
-        void ringDoorbell();
+        GarageDoor *m_garageDoor;
 
     public:
-        MqttHandlers(Doorbell *doorbell);
+        MqttHandlers(GarageDoor *garageDoor);
 
         void begin();
         void processReceivedMessage(char* topic, uint8_t* payload, unsigned int length);
