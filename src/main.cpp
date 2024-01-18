@@ -1,12 +1,12 @@
 #include <internal/core/application.h>
-#include <internal/audio/doorbell.h>
+#include <internal/garage_door/garage_door.h>
 #include <handlers/http.h>
 
 #define PIN_BOOT_INDICATOR 2
 
 Application *app = nullptr;
 Settings *settings = nullptr;
-Doorbell *doorbell = nullptr;
+GarageDoor *garageDoor = nullptr;
 
 bool isWiFiConnected() {
     if (app == nullptr)
@@ -69,8 +69,8 @@ void setup() {
         app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
 
-    doorbell = new Doorbell();
-    mqttHandlers = new MqttHandlers(doorbell);
+    garageDoor = new GarageDoor();
+    mqttHandlers = new MqttHandlers(garageDoor);
     mqttHandlers->begin();
 }
 
@@ -84,8 +84,8 @@ void loop() {
     if (httpHandlers != nullptr)
         httpHandlers->loop();
     
-    if (doorbell != nullptr)
-        doorbell->loop();
+    if (garageDoor != nullptr)
+        garageDoor->loop();
     
     if (mqttHandlers != nullptr)
         mqttHandlers->loop();
