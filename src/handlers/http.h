@@ -68,7 +68,7 @@ class HttpHandlers {
         request_device_t parseDeviceBody(String body);
         
         request_wifiAP_t parseWiFiBody(String body);
-        std::vector<wifiAP_t> parseMultiWiFiBody(String body);
+        std::vector<request_wifiAP_t> parseMultiWiFiBody(String body);
 
         request_mqtt_t parseMQTTBody(String body);
 

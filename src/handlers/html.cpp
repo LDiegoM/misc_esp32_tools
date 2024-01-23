@@ -127,7 +127,6 @@ String HttpHandlers::getSettingsLoggingHTML() {
     return html;
 }
 
-
 String HttpHandlers::getAdminHTML() {
     String html = m_app->storage()->readAll("/wwwroot/admin/admin.html");
 

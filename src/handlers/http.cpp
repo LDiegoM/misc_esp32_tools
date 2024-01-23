@@ -212,7 +212,7 @@ void HttpHandlers::handleUpdSettingsWiFi() {
         return;
     }
 
-    std::vector<wifiAP_t> aps = parseMultiWiFiBody(body);
+    std::vector<request_wifiAP_t> aps = parseMultiWiFiBody(body);
     if (aps.size() < 1) {
         m_server->send(400, "text/plain", ERR_WIFI_AP_IS_EMPTY);
         return;
@@ -449,8 +449,8 @@ request_wifiAP_t HttpHandlers::parseWiFiBody(String body) {
     return newWiFiAP;
 }
 
-std::vector<wifiAP_t> HttpHandlers::parseMultiWiFiBody(String body) {
-    std::vector<wifiAP_t> aps;
+std::vector<request_wifiAP_t> HttpHandlers::parseMultiWiFiBody(String body) {
+    std::vector<request_wifiAP_t> aps;
 
     StaticJsonDocument<250> configs;
     DeserializationError error = deserializeJson(configs, body);
@@ -465,7 +465,7 @@ std::vector<wifiAP_t> HttpHandlers::parseMultiWiFiBody(String body) {
     JsonObject jsonObj = configs.as<JsonObject>();
 
     for (size_t i = 0; i < jsonObj["aps"].size(); i++) {
-        wifiAP_t ap;
+        request_wifiAP_t ap;
         ap.ssid = jsonObj["aps"][i]["ap"].as<String>();
         ap.password = jsonObj["aps"][i]["pw"].as<String>();
 
