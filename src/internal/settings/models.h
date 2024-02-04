@@ -9,6 +9,7 @@
 #include <internal/core/date_time.h>
 #include <internal/core/logging.h>
 #include <handlers/mqtt.h>
+#include <internal/garage_door/models.h>
 
 struct settings_t {
     application_t app;
@@ -16,6 +17,7 @@ struct settings_t {
     std::vector<wifiAP_t> wifiAPs;
     dateTime_t dateTime;
     logging_t logging;
+    garage_door_t garageDoor;
 };
 
 #endif

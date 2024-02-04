@@ -3,10 +3,11 @@
 const char* SETTINGS_FILE = "/settings/tools.json";
 
 //////////////////// Constructor
-Settings::Settings(Application *app) {
+Settings::Settings(Application *app, GarageDoor *garageDoor) {
     m_app = app;
     m_storage = app->storage();
     m_settingsOK = false;
+    m_garageDoor = garageDoor;
 }
 
 //////////////////// Public methods implementation
@@ -144,6 +145,14 @@ void Settings::setDateValues(String server1, String server2, long gmtOffset, int
     m_settings.dateTime.daylightOffset = daylightOffset;
 }
 
+void Settings::setGarageDoorValues(uint8_t doorOpenWarningTime, uint16_t refreshDoorStatusTime) {
+    m_settings.garageDoor.doorOpenWarningTime = doorOpenWarningTime;
+    m_garageDoor->setDoorOpenWarningTime(doorOpenWarningTime);
+
+    m_settings.garageDoor.refreshDoorStatusTime = refreshDoorStatusTime;
+    m_garageDoor->setRefreshDoorStatusTime(refreshDoorStatusTime);
+}
+
 //////////////////// Private methods implementation
 bool Settings::readSettings() {
     if (!m_storage->exists(SETTINGS_FILE)) {
@@ -195,6 +204,9 @@ bool Settings::readSettings() {
     m_settings.logging.level = jsonObj["logging"]["level"].as<uint8_t>();
     m_settings.logging.refreshPeriod = jsonObj["logging"]["refresh_period"].as<uint16_t>();
 
+    m_settings.garageDoor.doorOpenWarningTime = jsonObj["garage_door"]["open_wait_time"].as<uint8_t>();
+    m_settings.garageDoor.refreshDoorStatusTime = jsonObj["garage_door"]["refresh_status_time"].as<uint16_t>();
+
     return true;
 }
 
@@ -231,6 +243,10 @@ String Settings::createJson() {
     debugging["level"] = m_settings.logging.level;
     debugging["refresh_period"] = m_settings.logging.refreshPeriod;
 
+    JsonObject garageDoor = doc.createNestedObject("garage_door");
+    garageDoor["open_wait_time"] = m_settings.garageDoor.doorOpenWarningTime;
+    garageDoor["refresh_status_time"] = m_settings.garageDoor.refreshDoorStatusTime;
+
     String json;
     serializeJsonPretty(doc, json);
 
@@ -258,4 +274,7 @@ void Settings::defaultSettings() {
 
     m_settings.logging.level = LOG_LEVEL_DEBUG;
     m_settings.logging.refreshPeriod = 0;
+
+    m_settings.garageDoor.doorOpenWarningTime = m_garageDoor->getDoorOpenWarningTime();
+    m_settings.garageDoor.refreshDoorStatusTime = m_garageDoor->getRefreshDoorStatusTime();
 }

@@ -6,6 +6,7 @@
 #include <internal/settings/models.h>
 #include <internal/core/storage.h>
 #include <internal/core/logging.h>
+#include <internal/garage_door/garage_door.h>
 
 extern const char* SETTINGS_FILE;
 
@@ -15,13 +16,14 @@ class Settings {
         Storage *m_storage;
         settings_t m_settings;
         bool m_settingsOK;
+        GarageDoor *m_garageDoor;
 
         bool readSettings();
         String createJson();
         void defaultSettings();
 
     public:
-        Settings(Application *app);
+        Settings(Application *app, GarageDoor *garageDoor);
 
         bool begin();
         bool isSettingsOK();
@@ -43,6 +45,8 @@ class Settings {
         void setLoggingValues(uint8_t level, uint16_t refreshPeriod);
 
         void setDateValues(String server1, String server2, long gmtOffset, int daylightOffset);
+
+        void setGarageDoorValues(uint8_t doorOpenWarningTime, uint16_t refreshDoorStatusTime);
 };
 
 #endif

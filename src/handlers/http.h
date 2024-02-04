@@ -30,17 +30,12 @@ class HttpHandlers {
 
         const char* MSG_OK = "ok";
         const char* ERR_SETTINGS_SAVE_GENERIC = "Error saving settings. Please try again";
-        const char* ERR_DEVICE_IS_EMPTY = "Device parameters can't be empty";
         const char* ERR_WIFI_AP_NOT_FOUND = "AP ssid not found";
         const char* ERR_WIFI_AP_IS_EMPTY = "AP ssid can't be empty";
         const char* ERR_WIFI_AP_EXISTS = "There's already an AP with the same SSID";
 
-        const char* ERR_MQTT_IS_EMPTY = "MQTT parameters can't be empty";
+        const char* ERR_EMPTY_PARAMETERS = "parameters can't be empty";
         
-        const char* ERR_DATE_IS_EMPTY = "Date Time parameters can't be empty";
-        
-        const char* ERR_LOGGING_IS_EMPTY = "Logging parameters can't be empty";
-
         Application *m_app;
         Settings *m_settings;
 #ifdef ESP8266
@@ -62,6 +57,7 @@ class HttpHandlers {
         String getSettingsMQTTHTML();
         String getSettingsDateHTML();
         String getSettingsLoggingHTML();
+        String getSettingsGarageDoorHTML();
 
         String getAdminHTML();
 
@@ -75,6 +71,8 @@ class HttpHandlers {
         request_dateTime_t parseDateBody(String body);
 
         request_logging_t parseLoggingBody(String body);
+
+        request_garage_door_t parseGarageDoorBody(String body);
 
     public:
         HttpHandlers(Application *app, Settings *settings);
@@ -112,6 +110,9 @@ class HttpHandlers {
 
         void handleGetSettingsLogging();
         void handleUpdSettingsLogging();
+
+        void handleGetSettingsGarageDoor();
+        void handleUpdSettingsGarageDoor();
 
         void handleGetAdmin();
 };

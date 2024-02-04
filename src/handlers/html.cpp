@@ -127,6 +127,16 @@ String HttpHandlers::getSettingsLoggingHTML() {
     return html;
 }
 
+String HttpHandlers::getSettingsGarageDoorHTML() {
+    String html = m_app->storage()->readAll("/wwwroot/settings/garage_door.html");
+
+    settings_t settings = m_settings->getSettings();
+    html.replace("{doorOpenWarningTime}", String(settings.garageDoor.doorOpenWarningTime));
+    html.replace("{refreshDoorStatusTime}", String(settings.garageDoor.refreshDoorStatusTime));
+
+    return html;
+}
+
 String HttpHandlers::getAdminHTML() {
     String html = m_app->storage()->readAll("/wwwroot/admin/admin.html");
 
