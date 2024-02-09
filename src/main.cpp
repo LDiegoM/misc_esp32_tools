@@ -30,7 +30,9 @@ void setup() {
             ->add("device_id", app->deviceID())
     );
 
-    settings = new Settings(app);
+    garageDoor = new GarageDoor();
+
+    settings = new Settings(app, garageDoor);
     if (!settings->begin()) {
         lg->error("Could not load settings", __FILE__, __LINE__);
         app->bootIndicator()->startErrorBlink();
@@ -46,6 +48,8 @@ void setup() {
     lg->setRefreshPeriod(config.logging.refreshPeriod);
     app->setDeviceID(config.app.deviceID);
     app->setGeoLocation(config.app.geoLocation);
+    garageDoor->setDoorOpenWarningTime(config.garageDoor.doorOpenWarningTime);
+    garageDoor->setRefreshDoorStatusTime(config.garageDoor.refreshDoorStatusTime);
 
     app->beginWiFi(config.wifiAPs, app->deviceID());
     app->beginDateTime(config.dateTime);
@@ -69,7 +73,6 @@ void setup() {
         app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
 
-    garageDoor = new GarageDoor();
     mqttHandlers = new MqttHandlers(garageDoor);
     mqttHandlers->begin();
 }

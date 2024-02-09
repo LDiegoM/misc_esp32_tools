@@ -144,13 +144,13 @@ void HttpHandlers::handleGetSettingsDevice() {
 void HttpHandlers::handleUpdSettingsDevice() {
     String body = m_server->arg("plain");
     if (body.equals("")) {
-        m_server->send(400, "text/plain", ERR_DEVICE_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
     request_device_t deviceSettings = parseDeviceBody(body);
     if (deviceSettings.deviceID.equals("")) {
-        m_server->send(400, "text/plain", ERR_DEVICE_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
@@ -267,13 +267,13 @@ void HttpHandlers::handleGetSettingsMQTT() {
 void HttpHandlers::handleUpdSettingsMQTT() {
     String body = m_server->arg("plain");
     if (body.equals("")) {
-        m_server->send(400, "text/plain", ERR_MQTT_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
     request_mqtt_t mqttValues = parseMQTTBody(body);
     if (mqttValues.server.equals("")) {
-        m_server->send(400, "text/plain", ERR_MQTT_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
@@ -313,13 +313,13 @@ void HttpHandlers::handleGetSettingsDate() {
 void HttpHandlers::handleUpdSettingsDate() {
     String body = m_server->arg("plain");
     if (body.equals("")) {
-        m_server->send(400, "text/plain", ERR_DATE_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
     request_dateTime_t dateSettings = parseDateBody(body);
     if (dateSettings.server1.equals("") || dateSettings.server2.equals("")) {
-        m_server->send(400, "text/plain", ERR_DATE_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
@@ -344,7 +344,7 @@ void HttpHandlers::handleGetSettingsLogging() {
 void HttpHandlers::handleUpdSettingsLogging() {
     String body = m_server->arg("plain");
     if (body.equals("")) {
-        m_server->send(400, "text/plain", ERR_LOGGING_IS_EMPTY);
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
         return;
     }
 
@@ -359,6 +359,33 @@ void HttpHandlers::handleUpdSettingsLogging() {
     }
 
     lg->info("logging settings were updated by http request", __FILE__, __LINE__);
+    m_server->send(200, "text/plain", MSG_OK);
+}
+
+void HttpHandlers::handleGetSettingsGarageDoor() {
+    m_server->sendHeader("Content-Type", "text/html");
+    m_server->sendContent(getHeaderHTML("settings"));
+    m_server->sendContent(getSettingsGarageDoorHTML());
+    m_server->sendContent(getFooterHTML());
+}
+void HttpHandlers::handleUpdSettingsGarageDoor() {
+    String body = m_server->arg("plain");
+    if (body.equals("")) {
+        m_server->send(400, "text/plain", ERR_EMPTY_PARAMETERS);
+        return;
+    }
+
+    request_garage_door_t garageDoorSettings = parseGarageDoorBody(body);
+
+    m_settings->setGarageDoorValues(garageDoorSettings.doorOpenWarningTime, garageDoorSettings.refreshDoorStatusTime);
+
+    if (!m_settings->saveSettings()) {
+        lg->error("http handler couldn't save settings to update garage_door", __FILE__, __LINE__);
+        m_server->send(500, "text/plain", ERR_SETTINGS_SAVE_GENERIC);
+        return;        
+    }
+
+    lg->info("garage_door settings were updated by http request", __FILE__, __LINE__);
     m_server->send(200, "text/plain", MSG_OK);
 }
 
@@ -402,6 +429,9 @@ void HttpHandlers::defineRoutes() {
 
     m_server->on("/settings/logging", HTTP_GET, [](){httpHandlers->handleGetSettingsLogging();});
     m_server->on("/settings/logging", HTTP_PUT, [](){httpHandlers->handleUpdSettingsLogging();});
+
+    m_server->on("/settings/garage_door", HTTP_GET, [](){httpHandlers->handleGetSettingsGarageDoor();});
+    m_server->on("/settings/garage_door", HTTP_PUT, [](){httpHandlers->handleUpdSettingsGarageDoor();});
 
     m_server->onNotFound([](){httpHandlers->handleGetNotFound();});
 }
@@ -547,4 +577,25 @@ request_logging_t HttpHandlers::parseLoggingBody(String body) {
     loggingValues.refreshPeriod = jsonObj["refresh_period"].as<uint16_t>();
 
     return loggingValues;
+}
+
+request_garage_door_t HttpHandlers::parseGarageDoorBody(String body) {
+    request_garage_door_t garageDoorValues;
+
+    StaticJsonDocument<256> configs;
+    DeserializationError error = deserializeJson(configs, body);
+    if (error) {
+        lg->error("fail to parse garage_door settings body", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("method", "deserializeJson()")
+                ->add("error", String(error.c_str()))
+        );
+        return garageDoorValues;
+    }
+    JsonObject jsonObj = configs.as<JsonObject>();
+
+    garageDoorValues.doorOpenWarningTime = jsonObj["wt"].as<uint8_t>();
+    garageDoorValues.refreshDoorStatusTime = jsonObj["rt"].as<uint16_t>();
+
+    return garageDoorValues;
 }

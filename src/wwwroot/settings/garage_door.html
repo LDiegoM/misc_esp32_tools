@@ -1,0 +1,38 @@
+<div class="container mt-4">
+    <p>This page contains current Garage door configurations, and allows to modify them.</p>
+    <div class="row">
+        <div class="col">
+            <label for="doorOpenWarningTime" class="form-label">Open warning time (sec):</label>
+            <input type="number" class="form-control" id="doorOpenWarningTime" placeholder="Open warning time (sec)" name="gmtOffset" value="{doorOpenWarningTime}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <label for="refreshDoorStatusTime" class="form-label">Refresh status time (sec):</label>
+            <input type="number" class="form-control" id="refreshDoorStatusTime" placeholder="Refresh status time (sec)" name="gmtOffset" value="{refreshDoorStatusTime}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <button type="button" class="btn btn-primary mt-2" onclick="saveGarageDoor();">Save</button>
+        </div>
+    </div>
+</div>
+<script>
+function saveGarageDoor() {
+    const body = getUpdateBody();
+
+    executeCall("/settings/garage_door", "PUT", body).then((updOk) => {
+        if (updOk == true) {
+            document.location.reload(true);
+        }
+    });
+}
+
+function getUpdateBody() {
+    const doorOpenWarningTime = document.getElementById("doorOpenWarningTime").value;
+    const refreshDoorStatusTime = document.getElementById("refreshDoorStatusTime").value;
+
+    return '{"wt":' + doorOpenWarningTime + ',"rt":' + refreshDoorStatusTime + '}';
+}
+</script>
