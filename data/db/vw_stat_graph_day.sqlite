@@ -1,0 +1,17 @@
+WITH RECURSIVE dates(day) AS (
+	VALUES(DateTime(Date('now', 'localtime')))
+	UNION ALL
+	SELECT DateTime(day, '+1 hour')
+	FROM dates
+	WHERE day < DateTime(Date('now', 'localtime', '+1 day'), '-1 hour')
+)
+SELECT Time(dates.day) AS period,
+	CASE WHEN e.openings IS NULL THEN 0 ELSE e.openings END AS openings,
+	CASE WHEN e.warnings IS NULL THEN 0 ELSE e.warnings END AS warnings
+FROM dates
+	LEFT JOIN (
+		SELECT DateTime(substr(time, 0, 14) || ':00:00') as day, COUNT(1) AS openings, SUM(warning) as warnings
+		FROM events
+		GROUP BY DateTime(substr(time, 0, 14) || ':00:00')
+	) e ON dates.day = e.day
+;

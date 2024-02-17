@@ -1,0 +1,16 @@
+SELECT id, time, warning,
+	CASE WHEN closed_time != '' THEN 1 ELSE 0 END AS was_closed,
+	CAST(
+		CAST(ROUND((JulianDay(
+			CASE WHEN closed_time != '' THEN closed_time ELSE DateTime('now', 'localtime') END
+		) - JulianDay("time")) * 24 * 60, 2) AS INTEGER)
+	AS TEXT) || 'm ' ||
+	CAST(
+		CAST(ROUND((JulianDay(
+			CASE WHEN closed_time != '' THEN closed_time ELSE DateTime('now', 'localtime') END
+		) - JulianDay("time")) * 24 * 3600, 2) AS INTEGER) % 60
+	AS TEXT) || 's' AS opened_duration
+FROM events
+WHERE event = 'door_open'
+ORDER BY id DESC
+LIMIT 0, 1;

@@ -35,17 +35,17 @@ bool Audio::play(uint8_t audioType) {
 void Audio::stop() {
     if (mp3 != nullptr) {
         mp3->stop();
-        free(mp3);
+        delete mp3;
         mp3 = nullptr;
     }
 
     if (file != nullptr) {
-        free(file);
+        delete file;
         file = nullptr;
     }
 
     if (out != nullptr) {
-        free(out);
+        delete out;
         out = nullptr;
     }
     m_currentAudio = NO_SOUND;

@@ -10,7 +10,6 @@ LogTags::LogTags() {
 }
 
 LogTags::~LogTags() {
-    lg->debug("Destroying tags", __FILE__, __LINE__, this);
     m_tags.clear();
 }
 
@@ -63,7 +62,7 @@ void Logging::setRefreshPeriod(uint16_t refreshPeriod) {
 
     if (m_refreshTimer != nullptr) {
         m_refreshTimer->stop();
-        free(m_refreshTimer);
+        delete m_refreshTimer;
     }
 
     if (m_refreshPeriod != 0) {
@@ -189,10 +188,12 @@ String Logging::getLogLevel(uint8_t level) {
 }
 
 String Logging::getFullData(String msg, uint8_t level, String file, int line) {
-    return getDateTime() + getLogLevel(level) + "[" + file + ":" + String(line) + "][msg:" + msg + "]";
+    return getDateTime() + getLogLevel(level) + "[" + file + ":" + String(line) + "][msg:" + msg + "][free_ram:" + getFreeMem() + "]";
 }
 String Logging::getFullData(String msg, uint8_t level, String file, int line, LogTags *tags) {
-    return getFullData(msg, level, file, line) + tags->toString();
+    String sTags = tags->toString();
+    delete tags;
+    return getFullData(msg, level, file, line) + sTags;
 }
 
 void Logging::writeData(String fullData) {
@@ -201,4 +202,8 @@ void Logging::writeData(String fullData) {
         m_storage->appendFile(LOGGING_FILE, data.c_str());
     else
         Serial.print(data);
+}
+
+String Logging::getFreeMem() {
+    return String((float) ESP.getFreeHeap() / 1024) + " kb";
 }

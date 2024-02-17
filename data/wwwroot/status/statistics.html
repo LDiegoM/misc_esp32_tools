@@ -1,0 +1,101 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="container mt-4">
+    <p>In the future this page contains statistic information (UNDER CONTRUCTION).</p>
+    <div class="row">
+        <div class="col-md-6 mt-2">
+            <div class="card">
+              <div class="card-header">Last door open status</div>
+              <div class="card-body">{ldos_body}</div>
+            </div>
+        </div>
+        <div class="col-md-6 mt-2">
+            <div class="card">
+                <div class="card-header">For future use</div>
+                <div class="card-body"><p>More cool information</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="card mt-2">
+        <div class="card-header">Garage door events by month</div>
+        <div class="card-body">
+            <div class="input-group">
+              <span class="input-group-text">Period to evaluate</span>
+              <select class="form-control form-select" id="graphEventsPeriod" placeholder="Period to evaluate" name="graphEventsPeriod" onchange="changePeriod()">
+                <option value="0" selected>Current day</option>
+                <option value="1">Last week</option>
+                <option value="2">Last month</option>
+                <option value="3">Last 6 months</option>
+              </select>
+            </div>
+            <div id="spin" class="spinner-border text-primary" style="margin-top:20px;"></div>
+            <br />
+            <canvas id="events_by_period" hidden="hidden"></canvas>
+          </div>
+    </div>
+</div>
+<script>
+const wait = (n) => new Promise((resolve) => setTimeout(resolve, n));
+
+function showSpin() {
+    document.getElementById("events_by_period").setAttribute("hidden", "hidden");
+    document.getElementById("spin").removeAttribute("hidden");
+}
+function hideSpin() {
+    document.getElementById("spin").setAttribute("hidden", "hidden");
+    document.getElementById("events_by_period").removeAttribute("hidden");
+}
+
+let graphEventsPeriod;
+
+async function changePeriod() {
+    showSpin();
+    await wait(1);
+    p = document.getElementById("graphEventsPeriod").value;
+
+    const response = await fetch(
+        "/statistics/graph?q=" + p,
+        {method: "GET"}
+    )
+
+    const resp = await response.text();
+    if (response.status >= 400) {
+        openModal("error", resp);
+        return;
+    }
+
+    const j = JSON.parse(resp);
+    console.log(resp);
+    console.log(j["periods"]);
+
+    if (graphEventsPeriod) {
+        graphEventsPeriod.destroy();
+    }
+    graphEventsPeriod = new Chart("events_by_period", {
+        type: "bar",
+        data: {
+            labels: j["periods"],
+            datasets: [
+                {
+                    label: "Door openings",
+                    backgroundColor: "lightblue",
+                    data: j["events"]
+                },
+                {
+                    label: "Door warnings",
+                    backgroundColor: "lightpink",
+                    data: j["warnings"]
+                }
+            ]
+        },
+        options: {
+        scales: {
+            y: {beginAtZero: true}
+        }
+    }
+    });
+    hideSpin();
+}
+
+changePeriod();
+    
+</script>

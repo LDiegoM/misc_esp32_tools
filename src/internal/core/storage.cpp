@@ -12,13 +12,13 @@ bool Storage::begin() {
     while(!LittleFS.begin()) {
         if (timeOut->isTime()) {
             timeOut->stop();
-            free(timeOut);
+            delete timeOut;
             return false;
         }
     }
 
     timeOut->stop();
-    free(timeOut);
+    delete timeOut;
     return true;
 }
 

@@ -1,4 +1,4 @@
-#include <handlers/http.h>
+#include <handlers/http.hpp>
 
 String HttpHandlers::getHeaderHTML(String section) {
     String header = m_app->storage()->readAll("/wwwroot/header.html");
@@ -31,8 +31,8 @@ String HttpHandlers::getNotFoundHTML() {
     return html;
 }
 
-String HttpHandlers::getStatusHTML() {
-    String html = m_app->storage()->readAll("/wwwroot/status/status.html");
+String HttpHandlers::getStatusGlobalHTML() {
+    String html = m_app->storage()->readAll("/wwwroot/status/global.html");
     if (!m_app->dateTime()->refresh()) {
         html.replace("{date_time}", "ERROR refreshing date_time");
     } else {
@@ -60,6 +60,25 @@ String HttpHandlers::getStatusHTML() {
         html.replace("{mqtt_connected}", CONNECTED);
     else
         html.replace("{mqtt_connected}", DISCONNECTED);
+
+    html.replace("{door_status}", m_garageDoor->getStatusString());
+    html.replace("{ds_ch_danger}", (m_garageDoor->doorIsOpened() ? " card-header-danger" : ""));
+    
+
+    return html;
+}
+String HttpHandlers::getStatusStatisticsHTML() {
+    String html = m_app->storage()->readAll("/wwwroot/status/statistics.html");
+    String ldosBody = "<p><strong>No door open event was registered</strong></p>";
+
+    last_opened_duration_t d = m_statistics->getLastOpenedDuration();
+    if (!d.openedTime.equals("")) {
+        ldosBody = "<p>Opened time: <strong>" + d.openedTime + "</strong></p>";
+        ldosBody += "<p>Was closed: " + String(d.wasClosed == true ? "Yes" : "<strong>No</strong>") + "</p>";
+        ldosBody += "<p>Warning triggered: " + String(d.warnTriggered == true ? "<strong>Yes</strong>" : "No") + "</p>";
+        ldosBody += "<p>Opened duration: " + d.openedDuration + "</p>";
+    }
+    html.replace("{ldos_body}", ldosBody);
 
     return html;
 }
@@ -141,6 +160,7 @@ String HttpHandlers::getAdminHTML() {
     String html = m_app->storage()->readAll("/wwwroot/admin/admin.html");
 
     html.replace("{logs_size}", lg->logSize());
+    html.replace("{statistics_size}", m_statistics->getDbSize());
 
     return html;
 }

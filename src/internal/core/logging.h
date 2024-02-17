@@ -52,6 +52,7 @@ class Logging {
         String getFullData(String msg, uint8_t level, String file, int line);
         String getFullData(String msg, uint8_t level, String file, int line, LogTags *tags);
         void writeData(String fullData);
+        String getFreeMem();
 
     public:
         Logging(uint8_t level);

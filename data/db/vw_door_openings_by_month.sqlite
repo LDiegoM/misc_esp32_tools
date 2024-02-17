@@ -1,0 +1,5 @@
+SELECT substr(time, 0, 8) AS year_month, COUNT(1) AS events_qty, SUM(warning) AS warning_qty
+FROM events
+WHERE event = 'door_open'
+GROUP BY substr(time, 0, 8)
+ORDER BY substr(time, 0, 8);

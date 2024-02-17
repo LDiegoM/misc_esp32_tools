@@ -1,4 +1,4 @@
-#include <internal/settings/settings.h>
+#include <internal/settings/settings.hpp>
 
 const char* SETTINGS_FILE = "/settings/tools.json";
 

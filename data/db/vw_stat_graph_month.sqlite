@@ -1,0 +1,17 @@
+WITH RECURSIVE dates(day) AS (
+	VALUES(Date('now', 'localtime', '-1 months'))
+	UNION ALL
+	SELECT Date(day, '+1 day')
+	FROM dates
+	WHERE day < Date('now', 'localtime')
+)
+SELECT dates.day AS period,
+	CASE WHEN e.openings IS NULL THEN 0 ELSE e.openings END AS openings,
+	CASE WHEN e.warnings IS NULL THEN 0 ELSE e.warnings END AS warnings
+FROM dates
+	LEFT JOIN (
+		SELECT Date(time) AS day, COUNT(1) AS openings, SUM(warning) as warnings
+		FROM events
+		GROUP BY Date(time)
+	) e ON dates.day = e.day
+;

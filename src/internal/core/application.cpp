@@ -29,24 +29,25 @@ Application::Application(String name, uint16_t pinBootIndicator, uint8_t logLeve
 }
 Application::~Application() {
     if (m_storage != nullptr) {
-        free(m_storage);
+        delete m_storage;
         m_storage = nullptr;
     }
 
     if (m_bootIndicator != nullptr) {
-        free(m_bootIndicator);
+        delete m_bootIndicator;
         m_bootIndicator = nullptr;
     }
 
     if (m_wifi != nullptr) {
-        free(m_wifi);
+        delete m_wifi;
         m_wifi = nullptr;
     }
 
     if (m_dateTime != nullptr) {
-        free(m_dateTime);
+        delete m_dateTime;
         m_dateTime = nullptr;
     }
+    delete lg;
 }
 
 //////////////////// Public methods implementation
@@ -102,19 +103,19 @@ BootIndicator* Application::bootIndicator() {
 
 void Application::beginWiFi(std::vector<wifiAP_t> wifiAPs) {
     if (m_wifi != nullptr)
-        free(m_wifi);
+        delete m_wifi;
     m_wifi = new WiFiConnection(wifiAPs);
     m_wifi->begin();
 }
 void Application::beginWiFi(std::vector<wifiAP_t> wifiAPs, String apSSID) {
     if (m_wifi != nullptr)
-        free(m_wifi);
+        delete m_wifi;
     m_wifi = new WiFiConnection(wifiAPs, apSSID);
     m_wifi->begin();
 }
 void Application::beginWiFi(String apSSID) {
     if (m_wifi != nullptr)
-        free(m_wifi);
+        delete m_wifi;
     m_wifi = new WiFiConnection(apSSID);
     m_wifi->begin();
 }
@@ -124,7 +125,7 @@ WiFiConnection* Application::wifi() {
 
 bool Application::beginDateTime(dateTime_t settings) {
     if (m_dateTime != nullptr)
-        free(m_dateTime);
+        delete m_dateTime;
     m_dateTime = new DateTime(settings);
     bool ok = m_dateTime->begin();
     lg->setDateTime(m_dateTime);

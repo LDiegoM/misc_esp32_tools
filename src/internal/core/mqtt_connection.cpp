@@ -71,6 +71,14 @@ bool MqttConnection::connect() {
         lg->newTags()->add("cmd_topic", cmdTopic)
     );
     m_mqttClient->subscribe(cmdTopic.c_str());
+
+    for (size_t i = 0; i < m_subcriptionTopics.size(); i++) {
+        lg->debug("Device connected to mqtt. Subscribing to external topic", __FILE__, __LINE__,
+            lg->newTags()->add("external_topic", m_subcriptionTopics[i])
+        );
+        m_mqttClient->subscribe(m_subcriptionTopics[i].c_str());
+    }
+
     m_tmrConnectMQTT->stop();
     m_connected = true;
 
@@ -158,6 +166,7 @@ void MqttConnection::setCallback(MQTT_CALLBACK_SIGNATURE) {
 }
 
 bool MqttConnection::subscribe(const char* topic) {
+    m_subcriptionTopics.push_back(String(topic));
     return m_mqttClient->subscribe(topic);
 }
 

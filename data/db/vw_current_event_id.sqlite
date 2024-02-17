@@ -1,0 +1,5 @@
+SELECT CASE WHEN closed_time != '' THEN 0 ELSE id END as id
+FROM events
+WHERE event = 'door_open'
+ORDER BY id DESC
+LIMIT 0, 1;

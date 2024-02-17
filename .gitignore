@@ -35,3 +35,4 @@
 .vscode
 
 /data/settings
+/data/db/statistics.db*

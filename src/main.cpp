@@ -1,12 +1,15 @@
 #include <internal/core/application.h>
-#include <internal/garage_door/garage_door.h>
-#include <handlers/http.h>
+#include <internal/garage_door/garage_door.hpp>
+#include <internal/statistics/statistics.hpp>
+#include <handlers/http.hpp>
 
 #define PIN_BOOT_INDICATOR 2
 
 Application *app = nullptr;
 Settings *settings = nullptr;
 GarageDoor *garageDoor = nullptr;
+Sqlite3DB *db = nullptr;
+Statistics *st = nullptr;
 
 bool isWiFiConnected() {
     if (app == nullptr)
@@ -52,16 +55,28 @@ void setup() {
     garageDoor->setRefreshDoorStatusTime(config.garageDoor.refreshDoorStatusTime);
 
     app->beginWiFi(config.wifiAPs, app->deviceID());
-    app->beginDateTime(config.dateTime);
+    if (app->beginDateTime(config.dateTime))
+        garageDoor->setDateTime(app->dateTime());
     app->beginMqtt(config.mqtt.connection);
 
-    httpHandlers = new HttpHandlers(app, settings);
+    db = new Sqlite3DB(app->storage());
+    st = new Statistics(app->storage(), db, app->dateTime());
+    if (!st->begin())
+        lg->error("fail to begin statistics", __FILE__, __LINE__);
+    else
+        garageDoor->setStatistics(st);
+
+    httpHandlers = new HttpHandlers(app, settings, garageDoor, st);
     if (!httpHandlers->begin()) {
         lg->error("Could not start http server", __FILE__, __LINE__);
         app->bootIndicator()->startErrorBlink();
         return;
     }
 
+    mqttHandlers = new MqttHandlers(garageDoor);
+    mqttHandlers->begin();
+
+    // At the end of setup function, use boot_indicator to show if wifi is connected to an AP or is in AP_MODE.
     if (app->wifi()->isModeAP()) {
         lg->warn("WiFi in AP mode!", __FILE__, __LINE__,
             lg->newTags()
@@ -72,9 +87,6 @@ void setup() {
         lg->debug("WiFi OK", __FILE__, __LINE__);
         app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
-
-    mqttHandlers = new MqttHandlers(garageDoor);
-    mqttHandlers->begin();
 }
 
 void loop() {

@@ -1,11 +1,13 @@
-#include <handlers/http.h>
+#include <handlers/http.hpp>
 
 HttpHandlers *httpHandlers = nullptr;
 
 //////////////////// Constructor
-HttpHandlers::HttpHandlers(Application *app, Settings *settings) {
+HttpHandlers::HttpHandlers(Application *app, Settings *settings, GarageDoor *garageDoor, Statistics *statistics) {
     m_app = app;
     m_settings = settings;
+    m_garageDoor = garageDoor;
+    m_statistics = statistics;
 }
 
 //////////////////// Public methods implementation
@@ -126,20 +128,107 @@ void HttpHandlers::handleGetBootstrapJS() {
 void HttpHandlers::handleGetNotFound() {
     String html = getNotFoundHTML();
     m_server->send(404, "text/html", html);
+    html.clear();
 }
 
-void HttpHandlers::handleGetStatus() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("status"));
-    m_server->sendContent(getStatusHTML());
-    m_server->sendContent(getFooterHTML());
+void HttpHandlers::handleGetStatusGlobal() {
+    String s = getHeaderHTML("status");
+    s += getStatusGlobalHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
+}
+void HttpHandlers::handleGetStatusStatistics() {
+    String s = getHeaderHTML("status");
+    s += getStatusStatisticsHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
+}
+void HttpHandlers::handleGetStatusStatisticsGraph() {
+    lg->debug("HttpHandlers::handleGetStatusStatisticsGraph() init", __FILE__, __LINE__);
+    graphType gt = STATISTICS_GRAPH_LAST_DAY;
+    String q = m_server->arg("q");
+    if (q == String(STATISTICS_GRAPH_LAST_WEEK) ||
+        q == String(STATISTICS_GRAPH_LAST_MONTH) ||
+        q == String(STATISTICS_GRAPH_LAST_6_MONTHS))
+        gt = (graphType) q.toInt();
+
+    String j = "{";
+    String periods = "";
+    String events = "";
+    String warnings = "";
+    std::vector<date_values_count_t> v = m_statistics->getStatistcsGraphLastPeriod(gt);
+    for (size_t i = 0; i < v.size(); i++) {
+        if (i > 0) {
+            periods += ",";
+            events += ",";
+            warnings += ",";
+        }
+        periods += "\"" + v[i].period + "\"";
+        events += String(v[i].eventsCount);
+        warnings += String(v[i].warningsCount);
+    }
+    j += "\"periods\":[" + periods + "],\n";
+    j += "\"events\":[" + events + "],\n";
+    j += "\"warnings\":[" + warnings + "]\n";
+    j += "}";
+    m_server->send(200, "application/json", j);
+    
+    v.clear();
+    periods.clear();
+    events.clear();
+    warnings.clear();
+    j.clear();
+}
+void HttpHandlers::handleDownloadStatistics() {
+    if (!m_app->storage()->exists(m_statistics->getDbFilePath().c_str())) {
+        m_server->send(404, "text/plain", "not found");
+        return;
+    }
+
+    File file = m_app->storage()->open(m_statistics->getDbFilePath().c_str());
+    if (!file) {
+        m_server->send(500, "text/plain", "fail to open logs file");
+        return;
+    }
+    size_t fileSize = file.size();
+
+    String dataType = "application/octet-stream";
+
+    m_server->sendHeader("Content-Disposition", "inline; filename=statistics.db");
+
+    size_t streamSize = m_server->streamFile(file, dataType);
+    if (streamSize != fileSize)
+        lg->warn("handleDownloadStatistics() - sent different data length than expected", __FILE__, __LINE__,
+            lg->newTags()
+                ->add("file_size", String(fileSize))
+                ->add("sent", String(streamSize))
+        );
+    
+    file.close();
+}
+void HttpHandlers::handleDeleteStatistics() {
+    if (!m_app->storage()->exists(m_statistics->getDbFilePath().c_str())) {
+        m_server->send(204);
+        return;
+    }
+
+    if (m_statistics->clear()) {
+        lg->warn("statistics file was removed by http request", __FILE__, __LINE__);
+        m_server->send(204);
+    } else {
+        lg->error("http handler couldn't remove statistics file", __FILE__, __LINE__);
+        m_server->send(500, "text/plain", "could not delete logging file");
+    }
 }
 
 void HttpHandlers::handleGetSettingsDevice() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsDeviceHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsDeviceHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleUpdSettingsDevice() {
     String body = m_server->arg("plain");
@@ -172,10 +261,11 @@ void HttpHandlers::handleUpdSettingsDevice() {
 }
 
 void HttpHandlers::handleGetSettingsWiFi() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsWiFiHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsWiFiHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleAddSettingsWiFi() {
     String body = m_server->arg("plain");
@@ -259,10 +349,11 @@ void HttpHandlers::handleDelSettingsWiFi() {
 }
 
 void HttpHandlers::handleGetSettingsMQTT() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsMQTTHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsMQTTHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleUpdSettingsMQTT() {
     String body = m_server->arg("plain");
@@ -305,10 +396,11 @@ void HttpHandlers::handleGetSettingsMQTTCert() {
 }
 
 void HttpHandlers::handleGetSettingsDate() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsDateHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsDateHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleUpdSettingsDate() {
     String body = m_server->arg("plain");
@@ -336,10 +428,11 @@ void HttpHandlers::handleUpdSettingsDate() {
 }
 
 void HttpHandlers::handleGetSettingsLogging() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsLoggingHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsLoggingHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleUpdSettingsLogging() {
     String body = m_server->arg("plain");
@@ -363,10 +456,11 @@ void HttpHandlers::handleUpdSettingsLogging() {
 }
 
 void HttpHandlers::handleGetSettingsGarageDoor() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("settings"));
-    m_server->sendContent(getSettingsGarageDoorHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("settings");
+    s += getSettingsGarageDoorHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 void HttpHandlers::handleUpdSettingsGarageDoor() {
     String body = m_server->arg("plain");
@@ -390,15 +484,21 @@ void HttpHandlers::handleUpdSettingsGarageDoor() {
 }
 
 void HttpHandlers::handleGetAdmin() {
-    m_server->sendHeader("Content-Type", "text/html");
-    m_server->sendContent(getHeaderHTML("admin"));
-    m_server->sendContent(getAdminHTML());
-    m_server->sendContent(getFooterHTML());
+    String s = getHeaderHTML("admin");
+    s += getAdminHTML();
+    s += getFooterHTML();
+    m_server->send(200, "text/html", s);
+    s.clear();
 }
 
 //////////////////// Private methods implementation
 void HttpHandlers::defineRoutes() {
-    m_server->on("/",      HTTP_GET, [](){httpHandlers->handleGetStatus();});
+    m_server->on("/",      HTTP_GET, [](){httpHandlers->handleGetStatusGlobal();});
+    m_server->on("/statistics",          HTTP_GET,    [](){httpHandlers->handleGetStatusStatistics();});
+    m_server->on("/statistics/graph",    HTTP_GET,    [](){httpHandlers->handleGetStatusStatisticsGraph();});
+    m_server->on("/statistics",          HTTP_DELETE, [](){httpHandlers->handleDeleteStatistics();});
+    m_server->on("/statistics/download", HTTP_GET,    [](){httpHandlers->handleDownloadStatistics();});
+
     m_server->on("/admin", HTTP_GET, [](){httpHandlers->handleGetAdmin();});
 
     m_server->on("/logs", HTTP_GET,    [](){httpHandlers->handleDownloadLogs();});

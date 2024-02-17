@@ -38,7 +38,7 @@ void BootIndicator::stopBlink() {
         return;
 
     m_tmrBlink->stop();
-    free(m_tmrBlink);
+    delete m_tmrBlink;
     m_tmrBlink = nullptr;
 }
 
@@ -72,7 +72,7 @@ int BootIndicator::indicatorLevel() {
 void BootIndicator::startBlink(unsigned long millis) {
     if (m_tmrBlink != nullptr) {
         m_tmrBlink->stop();
-        free(m_tmrBlink);
+        delete m_tmrBlink;
     }
 
     m_tmrBlink = new Timer(millis);

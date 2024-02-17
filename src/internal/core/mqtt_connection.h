@@ -5,6 +5,7 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <vector>
 
 #include <internal/core/timer.h>
 #include <internal/core/logging.h>
@@ -45,6 +46,8 @@ class MqttConnection {
         const char* MQTT_TOPIC_ADM_LOGSIZE  = "topic-{app_name}-adm-logsize";
         const char* MQTT_TOPIC_ADM_FREESTO  = "topic-{app_name}-adm-freesto";
         const char* MQTT_TOPIC_ADM_LOCATION = "topic-{app_name}-adm-location";
+
+        std::vector<String> m_subcriptionTopics;
 
         String getTopicName(const char* topicName);
 
