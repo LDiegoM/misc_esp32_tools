@@ -7,7 +7,7 @@ Sqlite3DB::Sqlite3DB(Storage *storage) {
 
 //////////////////// Public methods implementation
 bool Sqlite3DB::begin(String dbFileName) {
-    lg->debug("Database::begin() begin", __FILE__, __LINE__, lg->newTags()->add("db_file_name", dbFileName));
+    lg->debug("Database::begin() init", __FILE__, __LINE__, lg->newTags()->add("db_file_name", dbFileName));
     if (!m_storage->exists(DB_PATH)) {
         lg->info("Database::begin() create directory", __FILE__, __LINE__,
             lg->newTags()->add("directory", DB_PATH)
@@ -35,7 +35,7 @@ String Sqlite3DB::getFilePath() {
 
 bool Sqlite3DB::openDatabase() {
     m_errMsg = "";
-    lg->debug("Database::openDatabase() begin", __FILE__, __LINE__, lg->newTags()->add("db", m_dbPath));
+    lg->debug("Database::openDatabase() init", __FILE__, __LINE__, lg->newTags()->add("db", m_dbPath));
     if (!existsDatabase()) {
         m_errMsg = "Database::openDatabase() db file not found";
         lg->warn(m_errMsg, __FILE__, __LINE__, lg->newTags()->add("db", m_dbPath));
@@ -58,7 +58,11 @@ bool Sqlite3DB::openDatabase() {
 
 bool Sqlite3DB::closeDatabase() {
     m_errMsg = "";
-    lg->debug("Database::closeDatabase() begin", __FILE__, __LINE__, lg->newTags()->add("db", m_dbPath));
+    lg->debug("Database::closeDatabase() init", __FILE__, __LINE__, lg->newTags()->add("db", m_dbPath));
+
+    if (m_db == nullptr)
+        return true;
+
     bool ok = sqlite3_close(m_db) == SQLITE_OK;
     if (!ok) {
         m_errMsg = "Database::closeDatabase() fail to close db: " + String(sqlite3_errmsg(m_db));
@@ -89,7 +93,7 @@ bool Sqlite3DB::existsTable(String table) {
 
 bool Sqlite3DB::createDatabase(String createSQL) {
     m_errMsg = "";
-    lg->debug("Database::createDatabase() begin", __FILE__, __LINE__,
+    lg->debug("Database::createDatabase() init", __FILE__, __LINE__,
         lg->newTags()->add("sql", createSQL)
     );
     if (!createSQL.startsWith("CREATE TABLE")) {
@@ -140,7 +144,7 @@ bool Sqlite3DB::execNonQuerySQL(String sql) {
 
 bool Sqlite3DB::execInsertWithAutoincrementSQL(String sql, int *rowID) {
     m_errMsg = "";
-    lg->debug("Database::execInsertWithAutoincrementSQL() begin", __FILE__, __LINE__,
+    lg->debug("Database::execInsertWithAutoincrementSQL() init", __FILE__, __LINE__,
         lg->newTags()->add("sql", sql)
     );
     if (!sql.startsWith("INSERT")) {
@@ -255,10 +259,16 @@ bool Sqlite3DB::getResultsAsJSON(String sql, String *result) {
     lg->debug("Database::getResultsAsJSON() will execute a sentence", __FILE__, __LINE__, lg->newTags()->add("sql", sql));
 
     sqlite3_stmt *res;
-    const char *tail;
-    if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &res, &tail) != SQLITE_OK) {
-        m_errMsg = String("Database::getResultsAsJSON() error: fail to fetch data: ") + sqlite3_errmsg(m_db);
-        lg->error(m_errMsg, __FILE__, __LINE__, lg->newTags()->add("sql", sql));
+    try {
+        const char *tail;
+        if (sqlite3_prepare_v2(m_db, sql.c_str(), sql.length(), &res, &tail) != SQLITE_OK) {
+            m_errMsg = String("Database::getResultsAsJSON() error: fail to fetch data: ") + sqlite3_errmsg(m_db);
+            lg->error(m_errMsg, __FILE__, __LINE__, lg->newTags()->add("sql", sql));
+            return false;
+        }
+    } catch (char *e) {
+        m_errMsg = String("Database::getResultsAsJSON() error: catch on sqlite3_prepare_v2(): " + String(e));
+        lg->error(m_errMsg, __FILE__, __LINE__);
         return false;
     }
 

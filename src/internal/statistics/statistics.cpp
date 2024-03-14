@@ -23,6 +23,8 @@ bool Statistics::begin() {
         m_currentDoorOpenEvent = currentID;
     }
 
+    m_db->closeDatabase();
+
     return true;
 }
 
@@ -40,8 +42,7 @@ bool Statistics::clear() {
     if (m_storage == nullptr)
         return false;
 
-    if (!m_db->closeDatabase())
-        return false;
+    m_db->closeDatabase();
     
     bool ok = m_storage->remove(getDbFilePath().c_str());
     if (ok)
@@ -53,8 +54,15 @@ bool Statistics::clear() {
 }
 
 bool Statistics::addDoorOpening() {
+    lg->debug("Statistics::addDoorOpening() init", __FILE__, __LINE__);
+
     if (m_currentDoorOpenEvent > 0) {
         lg->warn("fail to send door open to statistics db: door was already opened", __FILE__, __LINE__);
+        return false;
+    }
+
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::addDoorOpening() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
         return false;
     }
 
@@ -72,12 +80,21 @@ bool Statistics::addDoorOpening() {
         lg->error("Statistics::addDoorOpening() error", __FILE__, __LINE__,
             lg->newTags()->add("error", m_db->getErrorMessage())
         );
+
+    m_db->closeDatabase();
     return ok;
 }
 
 bool Statistics::doorOpenWarning() {
+    lg->debug("Statistics::doorOpenWarning() init", __FILE__, __LINE__);
+
     if (m_currentDoorOpenEvent <= 0) {
         lg->error("fail to send door open warning to statistics db: no current event_id", __FILE__, __LINE__);
+        return false;
+    }
+
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::doorOpenWarning() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
         return false;
     }
 
@@ -92,12 +109,21 @@ bool Statistics::doorOpenWarning() {
         lg->error("Statistics::doorOpenWarning() error", __FILE__, __LINE__,
             lg->newTags()->add("error", m_db->getErrorMessage())
         );
+
+    m_db->closeDatabase();
     return ok;
 }
 
 bool Statistics::closeDoor() {
+    lg->debug("Statistics::closeDoor() init", __FILE__, __LINE__);
+
     if (m_currentDoorOpenEvent <= 0) {
         lg->error("fail to send door close to statistics db: no current event_id", __FILE__, __LINE__);
+        return false;
+    }
+
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::closeDoor() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
         return false;
     }
 
@@ -113,10 +139,14 @@ bool Statistics::closeDoor() {
         lg->error("Statistics::closeDoor() error", __FILE__, __LINE__,
             lg->newTags()->add("error", m_db->getErrorMessage())
         );
+
+    m_db->closeDatabase();
     return ok;
 }
 
 last_opened_duration_t Statistics::getLastOpenedDuration() {
+    lg->debug("Statistics::getLastOpenedDuration() init", __FILE__, __LINE__);
+
     last_opened_duration_t d;
     String sql = m_storage->readAll(VW_LAST_OPENED_DURATION);
     if (sql.equals("")) {
@@ -124,12 +154,23 @@ last_opened_duration_t Statistics::getLastOpenedDuration() {
         return d;
     }
 
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::getLastOpenedDuration() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
+        return d;
+    }
+
     String jsonData = "";
     bool ok = m_db->getResultsAsJSON(sql, &jsonData);
-    lg->debug("Statistics::getLastOpenedDuration() executed", __FILE__, __LINE__, lg->newTags()
-        ->add("ok", String(ok))
-        ->add("json_data", jsonData)
-    );
+    if (ok)
+        lg->debug("Statistics::getLastOpenedDuration() executed", __FILE__, __LINE__, lg->newTags()
+            ->add("ok", String(ok))
+            ->add("json_data", jsonData)
+        );
+    else
+        lg->error("Statistics::getLastOpenedDuration() error", __FILE__, __LINE__,
+            lg->newTags()->add("error", m_db->getErrorMessage())
+        );
+    m_db->closeDatabase();
 
     StaticJsonDocument<1024> results;
     DeserializationError error = deserializeJson(results, jsonData);
@@ -148,11 +189,16 @@ last_opened_duration_t Statistics::getLastOpenedDuration() {
     } else
         lg->info("Statistics::getLastOpenedDuration() no events where found in statistics db", __FILE__, __LINE__);
 
+    jsonObj.clear();
+    results.clear();
+    jsonData.clear();
     return d;
 }
 
 // FIXME: This methos is not being used. Change it to return the opend time average of last 30 days.
 std::vector<date_values_count_t> Statistics::getDoorOpeningsByMonth() {
+    lg->debug("Statistics::getDoorOpeningsByMonth() init", __FILE__, __LINE__);
+
     std::vector<date_values_count_t> values;
     String sql = m_storage->readAll(VW_DOOR_OPENINGS_BY_MONTH);
     if (sql.equals("")) {
@@ -160,12 +206,23 @@ std::vector<date_values_count_t> Statistics::getDoorOpeningsByMonth() {
         return values;
     }
 
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::getDoorOpeningsByMonth() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
+        return values;
+    }
+
     String jsonData = "";
     bool ok = m_db->getResultsAsJSON(sql, &jsonData);
-    lg->debug("Statistics::getDoorOpeningsByMonth() executed", __FILE__, __LINE__, lg->newTags()
-        ->add("ok", String(ok))
-        ->add("json_data", jsonData)
-    );
+    if (ok)
+        lg->debug("Statistics::getDoorOpeningsByMonth() executed", __FILE__, __LINE__, lg->newTags()
+            ->add("ok", String(ok))
+            ->add("json_data", jsonData)
+        );
+    else
+        lg->error("Statistics::getDoorOpeningsByMonth() error", __FILE__, __LINE__,
+            lg->newTags()->add("error", m_db->getErrorMessage())
+        );
+    m_db->closeDatabase();
 
     StaticJsonDocument<1024> results;
     DeserializationError error = deserializeJson(results, jsonData);
@@ -188,6 +245,9 @@ std::vector<date_values_count_t> Statistics::getDoorOpeningsByMonth() {
     } else
         lg->info("Statistics::getDoorOpeningsByMonth() no events where found in statistics db", __FILE__, __LINE__);
 
+    jsonObj.clear();
+    results.clear();
+    jsonData.clear();
     return values;
 }
 
@@ -205,12 +265,23 @@ std::vector<date_values_count_t> Statistics::getStatistcsGraphLastPeriod(graphTy
         return values;
     }
 
+    if (!m_db->openDatabase()) {
+        lg->error("Statistics::getStatistcsGraphLastPeriod() error", __FILE__, __LINE__, lg->newTags()->add("error", m_db->getErrorMessage()));
+        return values;
+    }
+
     String jsonData = "";
     bool ok = m_db->getResultsAsJSON(sql, &jsonData);
-    lg->debug("Statistics::getStatistcsGraphLastPeriod() executed", __FILE__, __LINE__, lg->newTags()
-        ->add("ok", String(ok))
-        ->add("json_data", jsonData)
-    );
+    if (ok)
+        lg->debug("Statistics::getStatistcsGraphLastPeriod() executed", __FILE__, __LINE__, lg->newTags()
+            ->add("ok", String(ok))
+            ->add("json_data", jsonData)
+        );
+    else
+        lg->error("Statistics::getStatistcsGraphLastPeriod() error", __FILE__, __LINE__,
+            lg->newTags()->add("error", m_db->getErrorMessage())
+        );
+    m_db->closeDatabase();
 
     StaticJsonDocument<3000> results;
     DeserializationError error = deserializeJson(results, jsonData);
@@ -235,6 +306,7 @@ std::vector<date_values_count_t> Statistics::getStatistcsGraphLastPeriod(graphTy
 
     jsonObj.clear();
     results.clear();
+    jsonData.clear();
     return values;
 }
 
