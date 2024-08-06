@@ -1,12 +1,35 @@
+#include <Arduino.h>
+
+#include <Adafruit_GFX.h>
+#include <TFT_ILI9163C.h>
+#include <Fonts/FreeSans9pt7b.h>
+
 #include <internal/core/application.h>
 #include <internal/garage_door/garage_door.h>
 #include <handlers/http.h>
 
-#define PIN_BOOT_INDICATOR 2
+#include <internal/display/display.h>
+#include <internal/display/number_set.h>
+#include <internal/sensors/sensors.h>
+
+#define BACKGROUND WHITE
+#define FORE_COLOR BLACK
+
+#define PIN_BOOT_INDICATOR 15
+
+#define TFT_CS 2 // TFT display cable select pin
+#define TFT_DC 4 // TFT display command pin
+
+#define DHTPIN 17
+#define DHTTYPE DHT11
 
 Application *app = nullptr;
 Settings *settings = nullptr;
 GarageDoor *garageDoor = nullptr;
+
+TFT_ILI9163C *tft = nullptr;
+Sensors *sensors;
+Display *display;
 
 bool isWiFiConnected() {
     if (app == nullptr)
@@ -17,7 +40,7 @@ bool isWiFiConnected() {
 }
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     app = new Application("esp_tools", PIN_BOOT_INDICATOR, LOG_LEVEL_DEBUG);
     if (!app->beginStorage()) {
         app->bootIndicator()->startErrorBlink();
@@ -29,6 +52,17 @@ void setup() {
             ->add("app_name", app->name())
             ->add("device_id", app->deviceID())
     );
+
+    tft = new TFT_ILI9163C(TFT_CS, TFT_DC);
+    tft->begin();
+    tft->setFont(&FreeSans9pt7b);
+
+    sensors = new Sensors(DHTPIN, DHTTYPE);
+    while (!sensors->begin()) {
+        lg->error("Could not load sensors", __FILE__, __LINE__);
+        app->bootIndicator()->startErrorBlink();
+        return;
+    }
 
     garageDoor = new GarageDoor();
 
@@ -75,6 +109,9 @@ void setup() {
 
     mqttHandlers = new MqttHandlers(garageDoor);
     mqttHandlers->begin();
+
+    display = new Display(tft, BACKGROUND, FORE_COLOR, sensors, app->wifi(), app->dateTime());
+    display->begin();
 }
 
 void loop() {
