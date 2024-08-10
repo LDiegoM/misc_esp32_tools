@@ -107,7 +107,7 @@ void setup() {
         app->bootIndicator()->setIndicatorStatusCallback(isWiFiConnected);
     }
 
-    mqttHandlers = new MqttHandlers(garageDoor);
+    mqttHandlers = new MqttHandlers(garageDoor, sensors, config.mqtt.sendPeriod);
     mqttHandlers->begin();
 
     display = new Display(tft, BACKGROUND, FORE_COLOR, sensors, app->wifi(), app->dateTime());

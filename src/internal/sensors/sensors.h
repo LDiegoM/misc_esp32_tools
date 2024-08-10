@@ -13,7 +13,7 @@ class Sensors {
         DHT *m_dhtSensor;
         Timer *m_tmrRefreshValues;
 
-        const uint16_t REFRESH_TIME_MILLIS = 500;
+        const uint16_t REFRESH_TIME_MILLIS = 100;
 
         void readValues();
 
