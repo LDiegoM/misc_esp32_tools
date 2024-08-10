@@ -15,9 +15,9 @@
 #define BACKGROUND WHITE
 #define FORE_COLOR BLACK
 
-#define PIN_BOOT_INDICATOR 15
+#define PIN_BOOT_INDICATOR 2
 
-#define TFT_CS 2 // TFT display cable select pin
+#define TFT_CS 15 // TFT display cable select pin
 #define TFT_DC 4 // TFT display command pin
 
 #define DHTPIN 17
@@ -28,8 +28,8 @@ Settings *settings = nullptr;
 GarageDoor *garageDoor = nullptr;
 
 TFT_ILI9163C *tft = nullptr;
-Sensors *sensors;
-Display *display;
+Sensors *sensors = nullptr;
+Display *display = nullptr;
 
 bool isWiFiConnected() {
     if (app == nullptr)
@@ -129,4 +129,10 @@ void loop() {
     
     if (mqttHandlers != nullptr)
         mqttHandlers->loop();
+    
+    if (display != nullptr)
+        display->loop();
+    
+    if (sensors != nullptr)
+        sensors->loop();
 }

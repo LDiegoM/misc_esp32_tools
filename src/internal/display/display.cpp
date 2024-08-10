@@ -28,9 +28,7 @@ bool Display::begin() {
     drawScreen();
     printDateTime();
 
-    if (!m_apMode) {
-        m_tmrRefreshTime->start();
-    }
+    m_tmrRefreshTime->start();
     return true;
 }
 

@@ -16,9 +16,6 @@ Sensors::Sensors(uint8_t dhtPin, uint8_t dhtType) {
 
 //////////////////// Public methods implementation
 bool Sensors::begin() {
-    Timer *timeOut = new Timer(10 * 1000);
-    timeOut->start();
-
     m_dhtSensor->begin();
 
     delay(1000);
